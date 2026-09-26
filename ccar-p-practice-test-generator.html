@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { color-scheme: light; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f7f7f5;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 24px;
+  }
+  .container { max-width: 780px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 14px; margin-bottom: 16px; }
+  .caveat { background: #fff8e6; border: 1px solid #f0dca0; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #6b5900; margin-bottom: 16px; }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .toolbar button.secondary { background: #fff; color: #d97757; border: 1px solid #d97757; }
+  .toolbar button.secondary:hover { background: #fff3ef; }
+  .domain-header {
+    margin-top: 32px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #d97757;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 6px;
+  }
+  .question-card {
+    background: #fff;
+    border: 1px solid #e5e5e2;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .question-text { font-weight: 600; margin-bottom: 12px; line-height: 1.4; }
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 4px;
+    transition: background 0.15s;
+  }
+  .option:hover { background: #fff3ef; }
+  .option input { margin-top: 3px; }
+  .option label { cursor: pointer; line-height: 1.4; }
+  .option.correct { background: #e6f7ec; }
+  .option.incorrect { background: #fdecec; }
+  .explanation {
+    display: none;
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: #fff8f5;
+    border-left: 3px solid #d97757;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+  }
+  .explanation.show { display: block; }
+  .submit-bar {
+    position: sticky;
+    bottom: 0;
+    background: #f7f7f5;
+    padding: 16px 0;
+    text-align: center;
+    border-top: 1px solid #e5e5e2;
+    margin-top: 24px;
+  }
+  button {
+    background: #d97757;
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { background: #c56344; }
+  button:disabled { background: #ccc; cursor: not-allowed; }
+  #results {
+    display: none;
+    background: #fff;
+    border: 1px solid #e5e5e2;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    text-align: center;
+  }
+  #results.show { display: block; }
+  #score { font-size: 32px; font-weight: 700; color: #d97757; }
+  #verdict { margin-top: 6px; color: #444; }
+  .domain-breakdown {
+    margin-top: 16px;
+    text-align: left;
+    font-size: 14px;
+  }
+  .domain-breakdown div { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
+  .reset-link { display: block; margin-top: 14px; font-size: 13px; color: #d97757; cursor: pointer; text-decoration: underline; }
+  #history { margin-top: 32px; }
+  #history h2 { font-size: 16px; margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; border-radius: 8px; overflow: hidden; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eee; }
+  th { background: #fff3ef; color: #444; font-weight: 600; }
+  .clear-history { font-size: 12px; color: #999; cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block; }
+  .empty-history { color: #888; font-size: 13px; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>CCAR-P Practice Test Generator</h1>
+  <div class="subtitle">Pulls a fresh, randomized 30-question set each time from a 64-question bank, weighted to CCAR-P's 7 domains (Integration 19%, Solution Design 17%, Evaluation/Testing/Optimisation 16%, Governance/Safety/Risk 14%, Stakeholder Communication/Lifecycle 14%, Claude Models/Prompting/Context Engineering 13%, Developer Productivity/Operational Enablement 7%). Score history saved in this browser.</div>
+  <div class="caveat">Domain weights and exam format are from third-party sources (tutorialsdojo.com, claudecertificationguide.com), cross-checked against each other but not yet confirmed against Anthropic's own official CCAR-P materials. Most questions are original, written to match the documented domain topics — not reproductions of any real exam or vendor practice-test content. The Solution Design & Architecture questions added 2026-09-23 are grounded directly in the official Anthropic Academy "Claude Platform & Solution Design" Module 1 content (the four behavior properties, the entry point/build-time interface/delivery route layers, the seven primitives, and the three-owner decomposition framework) — those are the closest thing here to real official-source material.</div>
+  <div class="toolbar">
+    <button id="generateBtn">Generate New Test</button>
+    <button class="secondary" id="clearHistoryBtn">Clear History</button>
+  </div>
+  <form id="quizForm"></form>
+  <div class="submit-bar" id="submitBar" style="display:none;">
+    <button id="submitBtn" type="button">Submit Test</button>
+  </div>
+  <div id="results">
+    <div id="score"></div>
+    <div id="verdict"></div>
+    <div class="domain-breakdown" id="domainBreakdown"></div>
+    <span class="reset-link" id="retakeLink">Generate another test</span>
+  </div>
+
+  <div id="history">
+    <h2>Past Attempts (saved in this browser)</h2>
+    <div id="historyContent"></div>
+  </div>
+</div>
+
+<script>
+const questionBank = [
+{domain:"Integration", q:"A team is building a RAG pipeline over a large corpus of highly structured legal contracts, where each clause has a distinct heading and cross-references to other clauses by section number. Which chunking strategy is most appropriate?", options:["Fixed-size chunking with a uniform token count regardless of document structure","Chunking the entire document as a single unit regardless of length","Structure-aware chunking that respects clause/section boundaries and preserves cross-reference context","Random sampling of paragraphs to reduce index size"], correct:2, exp:"Structure-aware chunking that respects natural document boundaries (clauses, sections) preserves semantic coherence and cross-reference context, which matters a lot for structured legal text. Fixed-size or random chunking risks splitting clauses mid-thought and losing the cross-reference relationships that matter for retrieval quality."},
+{domain:"Integration", q:"An enterprise wants to connect Claude to a dozen internal tools (ticketing, CRM, internal wiki, deployment systems) used by different engineering teams. What integration approach best supports least-privilege access and scalable governance?", options:["Expose each tool through its own scoped MCP server with narrowly defined permissions per tool","Grant a single service credential with full access to all systems for simplicity","Have Claude directly execute raw shell commands against each system's API","Bundle all tool logic into one large custom function with a single shared credential"], correct:0, exp:"Scoped MCP servers per tool/system, each with narrow permissions, is the standard pattern for least-privilege access at enterprise scale \u2014 it isolates blast radius and keeps governance manageable, unlike a single broad credential or one monolithic integration."},
+{domain:"Integration", q:"A production agent occasionally calls a tool with a valid but overly broad permission scope, able to delete records it should only be able to read. What's the most direct architectural fix?", options:["Trust the agent's judgment and rely on prompt instructions not to delete records","Remove all tools from the agent to eliminate risk entirely","Increase model temperature so the agent behaves more conservatively","Reduce the tool's granted permissions to match only what the task actually requires (least privilege)"], correct:3, exp:"Over-broad tool permissions are a security/architecture defect, not a prompting problem \u2014 the fix is scoping the tool's actual granted permissions to the minimum required, not hoping the model self-restrains."},
+{domain:"Integration", q:"You're deciding between exposing enterprise data to Claude via MCP versus building custom direct API integrations. What's the key advantage MCP offers in this context?", options:["MCP is always faster than any direct API call under all conditions","MCP provides a standardized interface and discovery mechanism that reduces bespoke integration work across multiple clients and tools","MCP eliminates the need for authentication entirely","MCP guarantees zero latency regardless of network conditions"], correct:1, exp:"MCP's value is standardization and discovery \u2014 multiple clients can connect to the same tools/data without each needing a bespoke integration, which is the real integration-cost savings, not a raw performance guarantee."},
+{domain:"Integration", q:"A monitoring system needs to track an agent's tool-calling behavior across a distributed multi-agent deployment spanning several services. What should the observability strategy prioritize?", options:["End-to-end tracing that correlates tool calls, latencies, and errors across agents and services","Logging only final outputs, since intermediate tool calls are not useful for debugging","Disabling logging in production to reduce overhead","Manually reviewing a random sample of conversations once per quarter"], correct:0, exp:"Distributed multi-agent systems need correlated end-to-end tracing (tool calls, latency, errors) to be debuggable and operable at scale \u2014 logging only final outputs or infrequent manual sampling won't surface the failure patterns that matter."},
+{domain:"Integration", q:"A team must choose between progressive tool discovery (Claude requests tool definitions as needed) and loading a large monolithic set of tool definitions upfront. When does progressive discovery matter most?", options:["When the total number of available tools is very small and context is not a constraint","Progressive discovery is never beneficial and should be avoided in all architectures","Only when using a model with no tool-use capability","When the number of available tools is large enough that loading all definitions upfront would consume excessive context and increase cost/latency"], correct:3, exp:"Progressive discovery earns its complexity when a large tool catalog would otherwise bloat context with mostly-unused definitions \u2014 for small tool sets, upfront loading is simpler and the tradeoff isn't worth it."},
+{domain:"Solution Design & Architecture", q:"A global retailer needs Claude to extract shipment costs from freight quotes, validate them against procurement policy, and generate a recommendation \u2014 with each stage depending on the previous stage's output and requiring auditability. Which architecture pattern fits best?", options:["A single monolithic prompt that autonomously decides what processing is needed","A fixed, sequenced workflow with discrete steps for extraction, validation, and recommendation","An autonomous agent that dynamically creates its own plan and tool selection each run","Parallel independent calls that extract, validate, and recommend simultaneously without waiting on each other"], correct:1, exp:"When stages have strict dependencies and the business needs predictability and auditability, a fixed workflow with discrete sequenced steps is the right pattern \u2014 autonomous or parallel approaches sacrifice the predictability this use case requires."},
+{domain:"Solution Design & Architecture", q:"A business wants to justify a proposed Claude-powered solution to leadership. Which framing best connects the architecture to business value?", options:["Describing the solution purely in terms of which Claude model and API endpoints are used","Focusing the pitch entirely on the novelty of using AI without connecting to business metrics","Tying specific architectural choices to measurable outcomes like productivity gains, cost reduction, or performance targets","Avoiding any discussion of tradeoffs to keep the presentation simple"], correct:2, exp:"Solution design at the Professional level is judged by whether architectural choices are explicitly connected to measurable business outcomes \u2014 technical detail alone, or novelty framing without metrics, doesn't demonstrate that connection."},
+{domain:"Solution Design & Architecture", q:"A task requires the system to independently decide, on a case-by-case basis, which tools to invoke and in what order, because inputs vary too much for a fixed sequence to work. Which pattern is most appropriate?", options:["An agentic pattern where the system plans and selects tools dynamically based on the specific input","A fixed, rigidly sequenced workflow with no branching","A single non-agentic prompt with no tool access at all","Parallel execution of all possible tool calls regardless of relevance"], correct:0, exp:"When inputs vary enough that a fixed sequence can't anticipate the right steps, an agentic pattern (dynamic planning and tool selection) is the appropriate architecture \u2014 a rigid workflow would break on the variability this case describes."},
+{domain:"Solution Design & Architecture", q:"When decomposing a complex business problem into a multi-agent system, what's the primary risk of creating too many narrowly-scoped agents?", options:["Narrow agents are always more accurate regardless of coordination overhead","Narrow agents cannot be given any tools","There is no risk \u2014 more agents is always strictly better","Coordination and hand-off overhead between agents can outweigh the benefit of narrow specialization"], correct:3, exp:"Over-decomposition introduces coordination overhead (hand-offs, context passing, orchestration complexity) that can outweigh the benefits of specialization \u2014 decomposition should match the problem's natural structure, not maximize agent count."},
+{domain:"Solution Design & Architecture", q:"A workflow needs to summarize a document and then answer follow-up questions about it in the same session, with no branching logic or tool calls required. Which pattern is the simplest fit?", options:["A full multi-agent orchestration with a dedicated coordinator","An augmented LLM pattern \u2014 a single model call with relevant context, no agentic loop needed","A hub-and-spoke design with several specialized subagents","An autonomous agent with a dynamic planning loop"], correct:1, exp:"When there's no branching or tool-use complexity, the simplest sufficient pattern (an augmented LLM \u2014 direct context plus a single call) is the right architectural choice; multi-agent or agentic-loop patterns would be unnecessary overhead here."},
+{domain:"Solution Design & Architecture", q:"An architecture review flags that a proposed system routes every request, regardless of complexity, through the most expensive and highest-latency model available. What does this suggest about the design?", options:["The design is missing tiered model routing \u2014 matching model choice to task complexity would reduce cost and latency without sacrificing quality where it isn't needed","This is optimal because using the best model everywhere maximizes quality","The issue is unrelated to architecture and is purely a pricing negotiation problem","Using one model everywhere is required for consistency and cannot be improved"], correct:0, exp:"Routing every request through the most expensive model regardless of complexity is a design smell \u2014 tiered routing (matching model cost/capability to task difficulty) is the standard architectural fix for cost and latency without sacrificing necessary quality."},
+{domain:"Evaluation, Testing & Optimisation", q:"A team wants to evaluate a Claude-powered customer support system before production rollout. What should the evaluation dataset prioritize to be representative?", options:["Only the easiest, most common support tickets to ensure high pass rates","A single synthetic example repeated many times for statistical significance","A mix of common cases, edge cases, and known failure-prone scenarios that reflect real production traffic","Only tickets the team already knows the system handles correctly"], correct:2, exp:"A representative eval dataset needs to include common cases, edge cases, and known failure modes \u2014 cherry-picking easy cases or only-known-good examples gives a false sense of readiness and hides real production risk."},
+{domain:"Evaluation, Testing & Optimisation", q:"After deployment, a system's response quality seems to be degrading over time, but no one can pinpoint why. What's the most likely missing piece?", options:["A larger context window, which always fixes quality degradation","Ongoing logging and observability that would surface drift, failure patterns, or upstream data changes","Switching to a more expensive model without further investigation","Reducing the system's tool access to zero"], correct:1, exp:"Without ongoing logging/observability, quality regressions are invisible until they're severe \u2014 the fix starts with instrumentation to detect and diagnose drift, not jumping straight to a model swap or blunt tool removal."},
+{domain:"Evaluation, Testing & Optimisation", q:"A team is comparing two prompt variants for the same task and wants statistically sound evidence of which performs better in production. What approach is most appropriate?", options:["Deploy the variant the team personally prefers without measurement","Alternate between variants randomly with no tracking of which variant produced which result","Ask Claude itself which prompt is better and accept that as ground truth","Run a structured A/B test with clear success metrics and adequate sample size before deciding"], correct:3, exp:"A structured A/B test with defined metrics and adequate sample size is the standard way to get statistically sound evidence \u2014 untracked alternation or subjective preference doesn't produce evidence a production decision can be based on."},
+{domain:"Evaluation, Testing & Optimisation", q:"A system exhibits occasional hallucinated facts in otherwise well-formed responses. What's the most useful next diagnostic step before making a fix?", options:["Analyze the specific failure cases to determine whether the issue is retrieval gaps, prompt ambiguity, or a genuine model limitation","Immediately switch to a completely different model without further analysis","Assume the issue is unfixable and disable the feature entirely","Increase the response length limit, which is unrelated to hallucination causes"], correct:0, exp:"Diagnosing hallucination requires distinguishing root causes (missing/poor retrieval context, ambiguous prompting, or genuine model limitation) \u2014 jumping straight to a model swap or disabling the feature skips the diagnostic step that determines the right fix."},
+{domain:"Evaluation, Testing & Optimisation", q:"A cost-optimization review finds that most of a system's token spend comes from re-sending a large, unchanged system prompt and reference document on every request. What's the most direct optimization?", options:["Shorten user messages instead, since the system prompt is assumed fixed cost","Switch to a model with a smaller context window to force shorter prompts","Apply prompt caching to the static system prompt and reference content so it isn't re-processed at full cost on every call","Remove the reference document entirely regardless of whether it's needed"], correct:2, exp:"Prompt caching is designed exactly for this pattern \u2014 large, static content reused across calls \u2014 and directly reduces token cost and latency without requiring content removal or unrelated context-window changes."},
+{domain:"Governance, Safety & Risk Management", q:"A production system needs to screen every model output for policy violations (toxicity, PII exposure) before returning it to the user, but running the primary large model multiple times for this check is too slow and expensive. What's the better architectural pattern?", options:["Run the primary expensive model three times and take a majority vote on safety","Pass the output through an independent, fast, low-cost model running asynchronously as a dedicated safety classifier","Skip safety screening in production to preserve latency","Only screen a random 1% sample of outputs and accept the rest without review"], correct:1, exp:"The standard production pattern is an independent, low-latency, low-cost model (like a smaller model) acting as a dedicated async classifier for safety checks \u2014 repeatedly re-running the expensive primary model for voting is costly and slow, and skipping or sampling safety checks is a governance failure."},
+{domain:"Governance, Safety & Risk Management", q:"A team is deploying an agent that can take real-world actions (sending emails, modifying records) based on Claude's output. What governance control is most important before granting this capability?", options:["Human-in-the-loop review and approval for high-impact or irreversible actions before they execute","No control is needed since the model is generally reliable","Granting the agent unrestricted permissions to move faster","Logging the action only after it has already been executed"], correct:0, exp:"For high-impact or irreversible actions, human-in-the-loop approval before execution is the standard governance control \u2014 post-hoc logging alone doesn't prevent harm, and unrestricted permissions or no controls at all are the opposite of responsible deployment."},
+{domain:"Governance, Safety & Risk Management", q:"A healthcare organization wants to deploy a Claude-powered system that processes patient data. Which consideration is most directly a compliance requirement rather than a general best practice?", options:["Making responses sound more empathetic","Using the largest available model for best response quality","Minimizing the number of words in each response","Ensuring the system meets HIPAA requirements around patient data handling and access controls"], correct:3, exp:"HIPAA compliance for patient data handling is a hard regulatory requirement in this context, distinct from general UX or model-selection best practices which, while useful, aren't compliance obligations."},
+{domain:"Governance, Safety & Risk Management", q:"An internal audit flags that a deployed agent has tool permissions far broader than what its actual use cases require. What risk does this primarily represent?", options:["No real risk, since broader permissions only improve flexibility","A cost-only concern with no security implications","An expanded attack surface and blast radius if the agent is manipulated (e.g., via prompt injection) into misusing those permissions","A UI/UX issue unrelated to security or governance"], correct:2, exp:"Over-provisioned permissions increase the potential damage if an agent is compromised or manipulated (such as through prompt injection) \u2014 this is a core governance/security concern, not just a flexibility or cost tradeoff."},
+{domain:"Governance, Safety & Risk Management", q:"A team wants to reduce the risk of biased or unfair outcomes from a Claude-powered decision-support tool used in hiring. What should the governance process include?", options:["Structured bias and fairness review of outputs across different demographic groups, with human oversight on final decisions","Assuming the model is neutral by default and skipping bias review","Removing all human review to eliminate human bias entirely","Using the tool only for final, unreviewed hiring decisions to save time"], correct:0, exp:"Responsible deployment in a sensitive domain like hiring requires structured bias/fairness review across groups plus human oversight on final decisions \u2014 assuming neutrality or removing human review entirely both increase risk rather than reduce it."},
+{domain:"Stakeholder Communication & Lifecycle Management", q:"During the discovery phase of a new Claude-powered solution, which group's requirements are most important to gather beyond the primary business sponsor?", options:["Only the business sponsor's requirements matter at this stage","Technical, legal, security, and operational stakeholders, since their constraints shape what's actually deployable","No one else needs to be consulted until after the system is built","Only the engineering team building the solution"], correct:1, exp:"Discovery needs input from technical, legal, security, and operational stakeholders in addition to the business sponsor \u2014 constraints from these groups (compliance, infrastructure, support burden) often materially change what's actually deployable."},
+{domain:"Stakeholder Communication & Lifecycle Management", q:"A solution architect needs to explain a complex multi-agent design to a non-technical executive audience. What's the most effective approach?", options:["Present the full technical architecture diagram with no simplification","Avoid the conversation entirely since executives don't need to understand architecture","Use as much technical jargon as possible to demonstrate expertise","Translate the design into business outcomes and tradeoffs (cost, risk, timeline) rather than technical implementation detail"], correct:3, exp:"Communicating to non-technical stakeholders means translating architecture into business terms \u2014 outcomes, tradeoffs, risk, cost \u2014 rather than technical depth or jargon, which the audience isn't positioned to evaluate."},
+{domain:"Stakeholder Communication & Lifecycle Management", q:"A production system has been live for six months. What lifecycle activity is most important at this stage that wasn't relevant during initial design?", options:["Re-running the original discovery interviews from scratch","Ignoring the system entirely since it was already deployed successfully","Ongoing monitoring, stakeholder feedback collection, and continuous improvement based on real production behavior","Rebuilding the system from zero regardless of current performance"], correct:2, exp:"Post-launch lifecycle management is about ongoing monitoring, feedback, and iterative improvement based on real usage \u2014 not repeating discovery from scratch or abandoning the system, and not rebuilding without cause."},
+{domain:"Stakeholder Communication & Lifecycle Management", q:"A stakeholder asks why a proposed Claude solution will take three months instead of the two weeks they expected. What's the best way to manage this expectation gap?", options:["Clearly explain the specific tradeoffs and dependencies (integration complexity, evaluation, governance review) driving the timeline","Avoid giving a real timeline to sidestep the conflict","Agree to the two-week timeline regardless of feasibility","Blame the engineering team without explaining the underlying reasons"], correct:0, exp:"Managing expectation gaps requires transparently explaining the specific tradeoffs and dependencies behind the timeline \u2014 agreeing to an infeasible deadline or avoiding the conversation both erode trust and set the project up to fail."},
+{domain:"Stakeholder Communication & Lifecycle Management", q:"During implementation handoff to an operations team, what documentation is most critical to include?", options:["Only the original sales pitch deck used to win the project","No documentation is needed if the original architect remains available indefinitely","A single-page summary with no technical detail at all","Architecture decisions, operational runbooks, monitoring/alerting setup, and known limitations"], correct:3, exp:"A proper handoff needs architecture rationale, operational runbooks, monitoring/alerting details, and known limitations \u2014 relying on the original architect's continued availability or providing no real documentation both create long-term operational risk."},
+{domain:"Claude Models, Prompting & Context Engineering", q:"A system relies heavily on prompt caching to reduce cost, but cache hit rates are far lower than expected. The system fragments a large static knowledge base into small chunks and distributes them randomly through the prompt on each call. What's the likely cause?", options:["Prompt caching is unrelated to prompt structure and this behavior is unexplainable","Prompt caching requires exact prefix matching from the start of the prompt; fragmenting and randomizing static content breaks the ability to match a stable prefix","The cache is working correctly and no further action is needed","Cache hit rate is determined solely by total token count, not content placement"], correct:1, exp:"Prompt caching relies on exact prefix matching starting from the beginning of the prompt. Static content needs to be structured consistently at the prefix (e.g., large knowledge bases, system instructions first) \u2014 fragmenting and randomizing it breaks prefix matching and tanks the cache hit rate."},
+{domain:"Claude Models, Prompting & Context Engineering", q:"A task requires classifying thousands of short customer messages per hour into a fixed set of categories, with tight latency and cost constraints. Which model selection approach fits best?", options:["Use a smaller, faster, lower-cost model suited to the task's actual complexity and volume","Always use the most capable, highest-reasoning model available regardless of task simplicity","Randomly alternate between all available models","Use the largest context window model regardless of how short the inputs are"], correct:0, exp:"High-volume, latency-sensitive, relatively simple classification tasks are a textbook case for matching model choice to task complexity \u2014 a smaller, faster, cheaper model is the right fit, not defaulting to the most capable (and most expensive) option."},
+{domain:"Claude Models, Prompting & Context Engineering", q:"A team wants multiple engineering teams to reuse a consistent set of instructions for a recurring task (e.g., code review conventions) without repeating them in every prompt. What's the best mechanism?", options:["Have each engineer retype the same instructions manually every time","Store the instructions in an email thread for reference","Define the instructions as a reusable Claude Skill that can be invoked consistently across teams","Avoid standardizing instructions to preserve flexibility"], correct:2, exp:"Claude Skills exist specifically to package reusable instructions/resources for recurring tasks, letting teams invoke consistent behavior without duplicating instructions in every prompt."},
+{domain:"Claude Models, Prompting & Context Engineering", q:"A long-running conversation is approaching its context limit, and important early constraints risk being pushed out. What context engineering technique directly addresses this?", options:["Ignore the issue since context limits rarely matter in practice","Prioritize and preserve critical instructions/decisions while summarizing or removing less relevant older content","Always discard the most recent messages instead of older ones","Switch to a model with no stated context limit, which doesn't exist as a real option"], correct:1, exp:"Context engineering at scale means actively prioritizing what stays in context \u2014 preserving critical constraints and decisions while trimming less relevant history \u2014 rather than passively hoping limits won't matter."},
+{domain:"Claude Models, Prompting & Context Engineering", q:"A prompt uses several worked examples to demonstrate the desired output format for an unusual classification taxonomy. Which prompting technique is being applied?", options:["Zero-shot prompting","Retrieval-augmented generation","Few-shot prompting","Prompt caching"], correct:2, exp:"Providing worked examples to demonstrate a desired pattern is the definition of few-shot prompting \u2014 distinct from zero-shot (no examples), RAG (retrieval of external content), or caching (a cost/latency optimization, not a prompting technique)."},
+{domain:"Developer Productivity & Operational Enablement", q:"An organization wants to standardize Claude Code configuration across engineering teams while preventing individual developers from overriding critical security settings. What's the best mechanism?", options:["Use server-managed settings that enforce organization-wide controls and prevent local overrides","Publish recommended settings in a document and hope teams follow them voluntarily","Allow each developer to configure settings independently with periodic audits after the fact","Avoid setting any organization-wide policy to maximize developer freedom"], correct:0, exp:"Server-managed settings that enforce controls and prevent local overrides is the standard mechanism for guaranteeing organization-wide policy compliance \u2014 voluntary guidance or after-the-fact audits don't prevent the problem, just detect it later."},
+{domain:"Developer Productivity & Operational Enablement", q:"A team wants to use Claude Code to help speed up debugging of a production incident. What's the most effective use in this context?", options:["Using Claude Code only for writing documentation, never for active debugging","Avoiding Claude Code entirely during incidents due to reliability concerns","Using Claude Code exclusively to write unit tests unrelated to the incident","Having Claude Code investigate logs, reproduce the issue, and suggest fixes as part of the debugging workflow"], correct:3, exp:"Claude Code's value during an incident includes actively assisting with investigation, reproduction, and fix suggestions \u2014 restricting it to unrelated tasks or avoiding it entirely wastes a legitimate operational tool."},
+{domain:"Developer Productivity & Operational Enablement", q:"An organization wants to distribute approved tools, skills, and MCP servers to engineering teams in a centrally managed way rather than letting each team source their own. What approach fits best?", options:["Letting each team independently discover and install whatever tools they find online","A managed plugin marketplace that distributes approved, vetted tools/skills/MCP servers across teams","Disabling all tool use organization-wide to avoid the question entirely","Requiring a manual email request for every single tool installation with no central catalog"], correct:1, exp:"A managed plugin marketplace is the standard pattern for centrally distributing vetted, approved tools/skills/MCP servers at scale \u2014 ad hoc team-level sourcing or all-manual processes don't scale and undermine governance."},
+{domain:"Solution Design & Architecture", q:"A Claude-powered pipeline produces a slightly different categorization for the same input across two separate runs, with no code or data changes. What does this most directly call for?", options:["A code rollback, since any output variation between runs indicates a regression bug","A permanent switch to a different model, since output variation signals the current model is broken","An evaluation framework that measures behavior across many runs, since non-determinism means a single observed run can't certify behavior","No action, since run-to-run variation never has architectural implications"], correct:2, exp:"Non-determinism means the same input can produce different outputs across runs. Because a single run isn't proof of reliable behavior, evaluation frameworks that sample across many runs are what let an architect actually certify behavior \u2014 this is why non-determinism is why evaluation frameworks exist."},
+{domain:"Solution Design & Architecture", q:"An architect is deciding how to handle a domain where information changes weekly and much of it is private to the organization. Per the model's knowledge-boundary property, what's the appropriate design response?", options:["Route those lookups through retrieval, tools, or MCP so an external system \u2014 not the model's training data \u2014 is the source of truth","Rely on the model's training data as the source of truth, since Claude is generally reliable on all topics","Increase the temperature setting so the model produces more confident answers on unfamiliar topics","Avoid the domain entirely, since fast-changing or private information can never be handled by a Claude-based solution"], correct:0, exp:"The model is reliable on topics that are common, recent, and consistent in training data, and unreliable on topics that are rare, private, or fast-changing. For those unreliable topics, retrieval, tools, and MCP make an external system the source of truth instead of the model itself."},
+{domain:"Solution Design & Architecture", q:"A long-running agent session keeps appending every tool result and intermediate message to the conversation without ever trimming or restructuring it. Which design principle is being violated?", options:["Least privilege, since tool permissions should always be minimized regardless of session length","Progressive disclosure, which only concerns how tools are named in a user interface","Statelessness, since agents are required to discard all prior turns after each tool call","Context as a finite resource \u2014 the context window is a hard edge with a fixed token budget, so what's kept, reordered, or left out is a design decision, not something to leave unmanaged"], correct:3, exp:"The context window has a fixed token budget. What you put in it, in what order, and what you leave out are design decisions that affect both what the model can work with and what the session costs to run \u2014 this is what feeds model and context strategy work later."},
+{domain:"Solution Design & Architecture", q:"A system's outputs are fluent and consistently confident in tone, but occasionally factually wrong in ways that are hard to catch by reading the response alone. What architectural principle does this illustrate?", options:["Knowledge boundary \u2014 the fix is always to fine-tune the model on more recent data","Confidence is not validity \u2014 a fluent, assured tone doesn't mean the answer is correct, so human-in-the-loop placement and verification need to be deliberate architectural choices, not an afterthought","Context as a finite resource \u2014 the fix is to shorten every prompt regardless of task","Non-determinism \u2014 the fix is to disable all sampling and force a single greedy output"], correct:1, exp:"Claude can produce a wrong answer in the same fluent, assured tone it uses for a right one. This is exactly why human-in-the-loop placement and verification have to be deliberate architecture decisions rather than afterthoughts."},
+{domain:"Solution Design & Architecture", q:"A proposal puts Claude Code \u2014 an interface built for developers running a terminal \u2014 directly in front of non-technical bank branch staff following a fixed workflow. What architectural mistake does this represent?", options:["Choosing the wrong delivery route, since Claude Code determines whose cloud infrastructure the request runs on","A tool-permission scoping error unrelated to which interface the end user sees","Collapsing the entry-point decision (chosen for the user and the work) with the build-time interface (chosen for the engineering team), when the two should be evaluated separately for who is actually interacting with Claude","A context-window sizing error, since Claude Code has a smaller context window than the API"], correct:2, exp:"An entry point is chosen for the user and the work; a build-time interface is chosen for the engineering team and the integration. Claude Code was built for developers, not workflow-following branch staff \u2014 treating the three layers as interchangeable and picking a developer-facing interface for a non-technical audience is the exact failure mode the platform map is meant to prevent."},
+{domain:"Solution Design & Architecture", q:"A partner's compliance posture requires all model inference to run on their existing AWS infrastructure rather than calling Anthropic's API endpoints directly. Which layer of the platform map does this decision belong to?", options:["Delivery route \u2014 it determines whose infrastructure the API traffic terminates on, e.g. Anthropic directly, AWS Bedrock, GCP Vertex AI, or Microsoft Foundry","Entry point \u2014 it determines which person or system directly interacts with Claude","Build-time interface \u2014 it determines which SDK the engineering team writes code against","Agent Team composition \u2014 it determines how many subagents coordinate on the task"], correct:0, exp:"Delivery routes are about where API traffic terminates \u2014 whose infrastructure runs the request. A compliance requirement to run on existing AWS infrastructure is a delivery-route decision (AWS Bedrock), chosen for the partner's cloud commitments and compliance posture, distinct from entry points or build-time interfaces."},
+{domain:"Solution Design & Architecture", q:"A team needs to guarantee that a specific compliance check runs on every single tool call an agent makes, with no way for the model to skip it. Which primitive is purpose-built for this?", options:["Skills, since they package a reusable procedure the model can choose to follow","Hooks, since they are deterministic code that fires on defined events to enforce a rule the model cannot skip","Subagents, since they isolate a task into a separate context","Dynamic Workflows, since they assemble workflow steps at runtime"], correct:1, exp:"Hooks are deterministic code that fires on defined events to enforce a rule the model cannot skip \u2014 exactly the primitive for a compliance check that must run every time, independent of the model's judgment."},
+{domain:"Solution Design & Architecture", q:"A team wants to package a versioned, reusable set of instructions and optional scripts so multiple projects can invoke the same repeatable procedure consistently. Which primitive fits, and how does it differ from a subagent?", options:["A subagent \u2014 subagents package a versioned, reusable procedure the same way skills do","MCP \u2014 MCP is the mechanism for packaging reusable instructions into a versioned unit","A hook \u2014 hooks package reusable instructions as their primary job","A Skill \u2014 skills package a repeatable procedure as a versioned, reusable unit, while a subagent instead hands a scoped sub-task to a separate context to run in isolation or parallel"], correct:3, exp:"Skills are a versioned, reusable unit (instructions plus optional scripts) that packages a repeatable procedure. Subagents do a different job: they hand a scoped sub-task to a separate context so work can run in isolation or in parallel \u2014 packaging a procedure and isolating/parallelizing a sub-task are distinct primitives solving different problems."},
+{domain:"Solution Design & Architecture", q:"While decomposing a solution, an architect assigns an exception-handling approval step \u2014 one where being right matters more than being fast \u2014 directly to Claude instead of a human reviewer. What does the three-owner decomposition framework say about this choice?", options:["It's correct, since Claude should own every step that involves any judgment at all","It's correct, since existing systems should never be trusted with approval steps","It's a common architect mistake \u2014 approvals and exception paths where correctness matters more than speed belong to human judgment, and over-assigning this kind of work to Claude typically makes the process more expensive, slower, and harder, not better","It's irrelevant, since the three-owner framework only applies to systems that use subagents"], correct:2, exp:"The three-owner framework splits work between what Claude does (language understanding, summarization, planning, drafting, tool-mediated action), what existing systems do (already-reliable order-status services, policy engines, rules tables), and what humans do (judgment calls, exception paths, approvals). Collapsing all three into 'what Claude does' is a common mistake architects make."},
+{domain:"Integration", q:"A partner wants Claude to query a live inventory database for stock levels during a customer chat, without giving the model direct database credentials. What integration pattern satisfies this?", options:["Embed the database password directly in the system prompt so Claude can connect natively","Expose a narrowly-scoped MCP tool or API endpoint that performs the lookup server-side and returns only the result, keeping credentials out of the model's context","Have Claude generate raw SQL and execute it directly against the production database","Disable tool use entirely and have a human manually check inventory for every chat"], correct:1, exp:"A scoped server-side tool/endpoint that performs the lookup and returns only the needed result keeps credentials out of the model's context entirely \u2014 far safer than embedding credentials or letting the model generate raw SQL against production."},
+{domain:"Integration", q:"Two teams each build their own bespoke integration to the same internal ticketing system for their own Claude-powered assistants, duplicating auth handling and error logic. What would reduce this duplication going forward?", options:["Have each team keep maintaining separate integrations, since duplication doesn't affect maintenance cost","Merge both assistants into a single agent with no tools at all","Require every future integration to be written directly against the ticketing system's raw internal API with no abstraction layer","Expose the ticketing system once through a shared MCP server that both assistants (and future ones) can connect to, avoiding duplicated auth and error-handling logic"], correct:3, exp:"MCP's standardization value is exactly this: exposing a capability once through a shared server that multiple clients can reach, instead of each team re-building bespoke, duplicated integration logic."},
+{domain:"Integration", q:"An agent's tool call to an external payment API times out intermittently under load, and there's currently no retry or backoff logic. What's the most direct integration fix?", options:["Add retry logic with exponential backoff and clear timeout handling around the external call, rather than letting a transient failure surface as a hard error","Remove the payment tool from the agent entirely to avoid the timeout","Increase the model's context window, which is unrelated to network timeout behavior","Switch the agent to a different model with no changes to the integration code"], correct:0, exp:"Intermittent timeouts under load are a classic case for retry-with-backoff and explicit timeout handling at the integration layer \u2014 a model swap or removing the tool doesn't address the actual network reliability problem."},
+{domain:"Integration", q:"A company wants external partners to safely build their own integrations against an internal Claude-powered service without seeing its internal implementation details. What should the integration boundary expose?", options:["The full internal source code, so partners can modify the underlying service directly","Nothing at all, since external partners should never be able to integrate with internal services","A stable, documented interface (such as an MCP server or API) that exposes only the intended capabilities and hides internal implementation details","Direct access to the production database backing the service"], correct:2, exp:"A stable, documented interface that exposes only the intended capability \u2014 not internals \u2014 is the standard integration boundary. It lets partners build against a contract that won't break when internal implementation changes, unlike exposing source code or raw database access."},
+{domain:"Integration", q:"An architecture connects Claude to fifteen different internal tools, and a security review wants to confirm no single compromised credential could affect every tool at once. What integration property should the review be checking for?", options:["That all fifteen tools share one broad service credential for operational simplicity","That each tool is scoped with its own narrow, independent credential/permission set, so a compromise of one doesn't cascade to the others","That the tools are merged into a single monolithic function to reduce the number of credentials","That credential rotation is disabled to avoid breaking any active sessions"], correct:1, exp:"Isolating credentials per tool (least privilege, scoped independently) limits blast radius \u2014 a compromised credential for one tool shouldn't cascade into access for the other fourteen. Sharing one broad credential is exactly the anti-pattern a security review should catch."},
+{domain:"Evaluation, Testing & Optimisation", q:"A team's only evaluation for a new Claude-powered feature is manually reading ten example transcripts before launch. What's the main limitation of this approach?", options:["Reading transcripts is unnecessary since automated evals are always sufficient on their own","This approach guarantees production quality and needs no further eval investment","Ten hand-picked examples aren't statistically representative of production traffic and won't surface edge cases or rare failure modes at scale","Manual review is not allowed under any evaluation framework"], correct:2, exp:"A tiny, likely hand-picked sample can't represent the diversity of real production traffic, and won't surface the edge cases or rare failure modes that matter most \u2014 a representative, appropriately-sized eval set is needed alongside any manual spot-checking."},
+{domain:"Evaluation, Testing & Optimisation", q:"After a prompt change, a team wants to know whether response quality actually improved or regressed, not just whether it 'feels different.' What should they rely on?", options:["A defined set of evaluation metrics measured consistently before and after the change, ideally with a structured comparison like an A/B test","A single team member's subjective impression after reading a few outputs","Whichever version produces longer responses, since length is a reliable quality proxy","Asking Claude to grade its own two versions with no defined criteria"], correct:0, exp:"Determining real improvement vs. regression requires defined, consistently-measured metrics and structured comparison \u2014 subjective impressions, response length, or ungrounded self-grading don't produce evidence a decision can be based on."},
+{domain:"Evaluation, Testing & Optimisation", q:"A classification system's accuracy looks fine in aggregate, but the team suspects it performs much worse on one specific underrepresented input category. What should the evaluation process check?", options:["Nothing further \u2014 aggregate accuracy is sufficient on its own to certify any system","Only the categories that already have the most training examples","Whether the model's confidence score is high, since confidence implies balanced performance across categories","Segmented performance broken out by category, specifically including underrepresented ones, since aggregate metrics can mask poor performance on smaller slices of the data"], correct:3, exp:"Aggregate metrics can hide poor performance on smaller or underrepresented slices of the data. Segmenting evaluation by category (especially ones suspected to be weak) is how that kind of masked failure gets surfaced before it reaches production."},
+{domain:"Evaluation, Testing & Optimisation", q:"A team wants to reduce the cost of running frequent evaluations across a large test set without giving up meaningful signal. What's a reasonable optimization?", options:["Eliminate evaluation entirely once the system passes its first review","Use a smaller, cheaper model as an automated grader for well-defined criteria, reserving human or expensive-model review for ambiguous or high-stakes cases","Run the full expensive primary model multiple times per test case regardless of cost","Reduce the test set to a single example to save on compute"], correct:1, exp:"Using a cheaper model as an automated grader for well-defined, easy-to-judge criteria \u2014 while reserving human or expensive-model review for genuinely ambiguous or high-stakes cases \u2014 keeps evaluation affordable without losing meaningful signal. Cutting eval entirely or shrinking the test set to one example loses the signal altogether."},
+{domain:"Governance, Safety & Risk Management", q:"A Claude-powered agent has standing access to send emails on a company's behalf. A new policy requires that any email to an external customer be reviewed before sending, while internal emails can send automatically. How should this be enforced?", options:["A hook or gating check in the send-email tool path that requires approval specifically for external-recipient emails, enforced in code rather than left to prompt instructions alone","A note in the system prompt asking Claude to be careful with external emails, with no code-level enforcement","Removing email-sending capability entirely regardless of recipient","Requiring approval for every single email, internal or external, to simplify the policy"], correct:0, exp:"A policy that must always hold (external emails need review) should be enforced in code \u2014 a hook or gating check tied to the actual condition \u2014 rather than relying on the model to reliably follow a prompt instruction every time. Removing the capability entirely or blanket-requiring approval for everything both over-correct relative to the actual policy."},
+{domain:"Governance, Safety & Risk Management", q:"A company deploying a Claude-powered tool in the EU needs to determine what user data protection obligations apply. Which consideration is the actual compliance driver here?", options:["Whether the product's marketing copy is engaging enough","Whether the model was trained using the largest possible dataset","Applicable data protection regulation such as GDPR, which governs how personal data can be collected, processed, and retained","Whether responses are generated quickly enough to satisfy user expectations"], correct:2, exp:"Data protection regulation like GDPR is a binding legal compliance driver for handling personal data in the EU \u2014 marketing tone, training data size, and response speed are unrelated to that specific compliance obligation."},
+{domain:"Governance, Safety & Risk Management", q:"An organization wants to be able to reconstruct exactly what an agent did and why, several weeks after an incident involving an incorrect automated action. What governance capability does this require?", options:["A larger context window, which has no bearing on post-incident reconstruction","Durable, detailed audit logging of the agent's decisions, tool calls, and inputs/outputs, retained long enough to support post-incident investigation","Deleting logs quickly to reduce storage costs","Relying on the agent to accurately recall and explain its own past actions from memory"], correct:1, exp:"Reconstructing an incident weeks later requires durable, detailed audit logs retained for long enough to investigate \u2014 not a bigger context window, aggressive log deletion, or trusting the model's own unverified recollection of what it did."},
+{domain:"Governance, Safety & Risk Management", q:"A risk review asks whether a customer-facing Claude deployment could be manipulated via prompt injection embedded in a webpage the agent is asked to summarize. What mitigation most directly addresses this specific risk?", options:["Increasing the model's temperature to make outputs more varied","Removing all logging so less sensitive data is retained","Using a larger model with no other changes to the tool or permission setup","Treating fetched web content as untrusted input, isolating it from the agent's instructions, and scoping/gating any resulting tool calls so injected text can't directly trigger privileged actions"], correct:3, exp:"Prompt injection via fetched content is mitigated by treating that content as untrusted data (not instructions), isolating it from the agent's own directives, and gating what actions can actually be triggered as a result \u2014 not by changing temperature, model size, or logging levels, none of which address the actual injection vector."},
+{domain:"Stakeholder Communication & Lifecycle Management", q:"Midway through a project, legal flags a new data-residency requirement that wasn't part of the original discovery conversations. What does this suggest about the original stakeholder engagement?", options:["Nothing \u2014 requirements discovered mid-project are always unavoidable and unrelated to discovery quality","The engineering team is solely at fault regardless of who was consulted during discovery","Legal/compliance stakeholders should have been engaged during discovery, since their constraints can materially change what's actually deployable","The project should be cancelled immediately with no attempt to accommodate the new requirement"], correct:2, exp:"Late-surfacing legal/compliance requirements are often a sign that those stakeholders weren't sufficiently engaged during discovery \u2014 their constraints (like data residency) can materially reshape the architecture, which is exactly why they belong in discovery from the start."},
+{domain:"Stakeholder Communication & Lifecycle Management", q:"A sponsor wants a status update on a Claude-powered project's progress, but a full technical readout would take an hour they don't have. What's the best communication approach?", options:["A concise summary framed around business outcomes, risks, and timeline \u2014 offering the technical detail as optional follow-up rather than the default","Sending the full technical architecture document with no summary and letting them find the relevant parts","Skipping the update entirely since a full readout isn't feasible in the time available","Providing only a timeline with no mention of risks or outcomes"], correct:0, exp:"When time is constrained, leading with business outcomes, risk, and timeline \u2014 and offering technical depth as optional follow-up \u2014 respects the sponsor's time while still giving them what they actually need to make decisions."},
+{domain:"Stakeholder Communication & Lifecycle Management", q:"A Claude-powered system is being sunset and replaced. What lifecycle step is most important to include before decommissioning it?", options:["Immediately deleting all logs and documentation associated with the system to save storage","Communicating the transition timeline to affected stakeholders and confirming any dependent workflows have a migration path before turning it off","Turning the system off first, then notifying stakeholders afterward","Leaving the decision entirely to the engineering team with no stakeholder communication at all"], correct:1, exp:"Sunsetting a live system safely means communicating the transition and confirming dependent workflows have a migration path before decommissioning \u2014 not after, and not silently deleting supporting records that might still be needed."},
+{domain:"Claude Models, Prompting & Context Engineering", q:"A prompt asks Claude to answer strictly using only the content of an attached document, with no outside knowledge. Which technique is this most directly an example of?", options:["Few-shot prompting, since it relies on worked examples","Prompt caching, since it's about reducing repeated token cost","Chain-of-thought prompting, since it's about showing reasoning steps","Grounding/context-constrained prompting, since it explicitly restricts the model's answer to the provided context rather than its trained knowledge"], correct:3, exp:"Explicitly instructing the model to answer only from provided content \u2014 rather than its general training knowledge \u2014 is a grounding/context-constraint technique, distinct from few-shot examples, caching (a cost optimization), or chain-of-thought (reasoning transparency)."},
+{domain:"Claude Models, Prompting & Context Engineering", q:"A team keeps a single, carefully-maintained system prompt at the very start of every request, followed by variable user content afterward. What cost/performance benefit does this structure support?", options:["It supports effective prompt caching, since a stable prefix at the start of the prompt is what allows repeated requests to hit the cache instead of reprocessing the same content at full cost","It guarantees the model will never hallucinate regardless of the user content that follows","It eliminates the need for any evaluation of the system prompt's effectiveness","It has no effect on cost or latency, since prompt structure is unrelated to either"], correct:0, exp:"Keeping stable content (like a system prompt) as a consistent prefix at the start of every request is exactly what enables prompt caching to work \u2014 variable content afterward doesn't break the cached prefix match."},
+{domain:"Developer Productivity & Operational Enablement", q:"A developer wants Claude Code to automatically run a project's linter and tests after every code change, without needing to remember to trigger them manually each time. What's the best mechanism?", options:["This isn't possible; Claude Code has no way to run commands automatically after a change","Manually re-invoke Claude Code from scratch after every single file save","Configure a hook that fires after file edits to automatically run the linter/test commands, enforcing the check without relying on the developer to remember","Disable all automation to avoid unpredictable behavior"], correct:2, exp:"Hooks are exactly the mechanism for firing deterministic actions (like running a linter or test suite) on defined events (like a file edit) without depending on the developer or the model to remember to trigger them manually."},
+{domain:"Developer Productivity & Operational Enablement", q:"An engineering org wants new hires to get consistent, vetted Claude Code configuration (approved tools, skills, MCP servers) on day one without manually copying settings between machines. What's the best approach?", options:["Have each new hire independently research and configure their own settings from scratch","Distribute configuration via a managed plugin/marketplace and server-managed settings so approved tools and policies are applied consistently without manual per-machine setup","Share one engineer's personal laptop configuration file over chat with no review process","Avoid setting any standard configuration to preserve individual flexibility"], correct:1, exp:"Managed plugin distribution plus server-managed settings is the standard way to give every new hire the same vetted, approved configuration automatically \u2014 ad hoc copying or no standard at all doesn't scale and risks inconsistent or insecure setups."}
+];
+
+const domainWeights = {
+  "Integration": 0.19,
+  "Solution Design & Architecture": 0.17,
+  "Evaluation, Testing & Optimisation": 0.16,
+  "Governance, Safety & Risk Management": 0.14,
+  "Stakeholder Communication & Lifecycle Management": 0.14,
+  "Claude Models, Prompting & Context Engineering": 0.13,
+  "Developer Productivity & Operational Enablement": 0.07
+};
+
+const TEST_SIZE = 30;
+const HISTORY_KEY = "ccarp_practice_history";
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generateTest() {
+  const byDomain = {};
+  questionBank.forEach(q => {
+    if (!byDomain[q.domain]) byDomain[q.domain] = [];
+    byDomain[q.domain].push(q);
+  });
+
+  let selected = [];
+  const domains = Object.keys(domainWeights);
+  let allocated = 0;
+  const counts = {};
+  domains.forEach((d, idx) => {
+    if (idx === domains.length - 1) {
+      counts[d] = TEST_SIZE - allocated;
+    } else {
+      const c = Math.round(domainWeights[d] * TEST_SIZE);
+      counts[d] = c;
+      allocated += c;
+    }
+  });
+
+  domains.forEach(d => {
+    const pool = shuffle(byDomain[d] || []);
+    const n = Math.min(counts[d], pool.length);
+    selected = selected.concat(pool.slice(0, n));
+  });
+
+  if (selected.length < TEST_SIZE) {
+    const remaining = shuffle(questionBank.filter(q => !selected.includes(q)));
+    selected = selected.concat(remaining.slice(0, TEST_SIZE - selected.length));
+  }
+
+  return shuffle(selected).slice(0, Math.min(TEST_SIZE, selected.length));
+}
+
+let currentTest = [];
+
+function renderTest() {
+  currentTest = generateTest();
+  const form = document.getElementById('quizForm');
+  form.innerHTML = '';
+  let currentDomain = "";
+
+  currentTest.forEach((item, i) => {
+    if (item.domain !== currentDomain) {
+      currentDomain = item.domain;
+      const h = document.createElement('div');
+      h.className = 'domain-header';
+      h.textContent = currentDomain;
+      form.appendChild(h);
+    }
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = 'card-' + i;
+
+    const qText = document.createElement('div');
+    qText.className = 'question-text';
+    qText.textContent = (i+1) + '. ' + item.q;
+    card.appendChild(qText);
+
+    item.options.forEach((opt, j) => {
+      const optDiv = document.createElement('div');
+      optDiv.className = 'option';
+      optDiv.id = 'opt-' + i + '-' + j;
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'q' + i;
+      input.value = j;
+      input.id = 'input-' + i + '-' + j;
+      const label = document.createElement('label');
+      label.htmlFor = 'input-' + i + '-' + j;
+      label.textContent = String.fromCharCode(65+j) + ') ' + opt;
+      optDiv.appendChild(input);
+      optDiv.appendChild(label);
+      optDiv.onclick = () => input.checked = true;
+      card.appendChild(optDiv);
+    });
+
+    const exp = document.createElement('div');
+    exp.className = 'explanation';
+    exp.id = 'exp-' + i;
+    exp.textContent = item.exp;
+    card.appendChild(exp);
+
+    form.appendChild(card);
+  });
+
+  document.getElementById('submitBar').style.display = 'block';
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('results').classList.remove('show');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveAttempt(record) {
+  try {
+    const history = loadHistory();
+    history.push(record);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch (e) {
+    console.warn('Could not save history', e);
+  }
+}
+
+function renderHistory() {
+  const container = document.getElementById('historyContent');
+  const history = loadHistory();
+  if (history.length === 0) {
+    container.innerHTML = '<div class="empty-history">No attempts recorded yet. Take a test above to start tracking your progress.</div>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Date</th><th>Score</th><th>%</th></tr></thead><tbody>';
+  history.slice().reverse().forEach(h => {
+    const pct = Math.round((h.score / h.total) * 100);
+    html += '<tr><td>' + h.date + '</td><td>' + h.score + ' / ' + h.total + '</td><td>' + pct + '%</td></tr>';
+  });
+  html += '</tbody></table><span class="clear-history" onclick="clearHistory()">Clear all history</span>';
+  container.innerHTML = html;
+}
+
+function clearHistory() {
+  try { localStorage.removeItem(HISTORY_KEY); } catch (e) {}
+  renderHistory();
+}
+window.clearHistory = clearHistory;
+
+document.getElementById('generateBtn').addEventListener('click', renderTest);
+document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
+document.getElementById('retakeLink').addEventListener('click', renderTest);
+
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const form = document.getElementById('quizForm');
+  let score = 0;
+  const domainStats = {};
+  currentTest.forEach((item, i) => {
+    if (!domainStats[item.domain]) domainStats[item.domain] = {correct:0, total:0};
+    domainStats[item.domain].total++;
+    const selected = form.querySelector('input[name="q' + i + '"]:checked');
+    const selectedVal = selected ? parseInt(selected.value) : -1;
+    const isCorrect = selectedVal === item.correct;
+    if (isCorrect) { score++; domainStats[item.domain].correct++; }
+
+    item.options.forEach((opt, j) => {
+      const optDiv = document.getElementById('opt-' + i + '-' + j);
+      if (j === item.correct) optDiv.classList.add('correct');
+      else if (j === selectedVal) optDiv.classList.add('incorrect');
+    });
+    document.getElementById('exp-' + i).classList.add('show');
+  });
+
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('score').textContent = score + ' / ' + currentTest.length;
+  let verdict = 'Below 21: revisit the corresponding domain notes/courses before your next attempt.';
+  if (score >= 27) verdict = 'Strong readiness on this material.';
+  else if (score >= 21) verdict = 'Solid, but review missed domains before exam day.';
+  document.getElementById('verdict').textContent = verdict;
+
+  const breakdown = document.getElementById('domainBreakdown');
+  breakdown.innerHTML = '';
+  Object.keys(domainStats).forEach(d => {
+    const row = document.createElement('div');
+    const stat = domainStats[d];
+    row.innerHTML = '<span>' + d + '</span><span>' + stat.correct + ' / ' + stat.total + '</span>';
+    breakdown.appendChild(row);
+  });
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+
+  saveAttempt({
+    date: new Date().toLocaleString(),
+    score: score,
+    total: currentTest.length,
+    domainStats: domainStats
+  });
+  renderHistory();
+});
+
+// initial load
+renderTest();
+renderHistory();
+</script>
+</body>
+</html>

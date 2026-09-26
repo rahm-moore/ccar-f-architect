@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  :root { color-scheme: light; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f7f7f5;
+    color: #1a1a1a;
+    margin: 0;
+    padding: 24px;
+  }
+  .container { max-width: 780px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .subtitle { color: #666; font-size: 14px; margin-bottom: 16px; }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .toolbar button.secondary { background: #fff; color: #7a5cff; border: 1px solid #7a5cff; }
+  .toolbar button.secondary:hover { background: #f2f0ff; }
+  .domain-header {
+    margin-top: 32px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #7a5cff;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 6px;
+  }
+  .question-card {
+    background: #fff;
+    border: 1px solid #e5e5e2;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .question-text { font-weight: 600; margin-bottom: 12px; line-height: 1.4; }
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 4px;
+    transition: background 0.15s;
+  }
+  .option:hover { background: #f2f0ff; }
+  .option input { margin-top: 3px; }
+  .option label { cursor: pointer; line-height: 1.4; }
+  .option.correct { background: #e6f7ec; }
+  .option.incorrect { background: #fdecec; }
+  .explanation {
+    display: none;
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: #f7f6ff;
+    border-left: 3px solid #7a5cff;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #333;
+  }
+  .explanation.show { display: block; }
+  .submit-bar {
+    position: sticky;
+    bottom: 0;
+    background: #f7f7f5;
+    padding: 16px 0;
+    text-align: center;
+    border-top: 1px solid #e5e5e2;
+    margin-top: 24px;
+  }
+  button {
+    background: #7a5cff;
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { background: #6a4ce8; }
+  button:disabled { background: #ccc; cursor: not-allowed; }
+  #results {
+    display: none;
+    background: #fff;
+    border: 1px solid #e5e5e2;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    text-align: center;
+  }
+  #results.show { display: block; }
+  #score { font-size: 32px; font-weight: 700; color: #7a5cff; }
+  #verdict { margin-top: 6px; color: #444; }
+  .domain-breakdown {
+    margin-top: 16px;
+    text-align: left;
+    font-size: 14px;
+  }
+  .domain-breakdown div { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
+  .reset-link { display: block; margin-top: 14px; font-size: 13px; color: #7a5cff; cursor: pointer; text-decoration: underline; }
+  #history { margin-top: 32px; }
+  #history h2 { font-size: 16px; margin-bottom: 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; border-radius: 8px; overflow: hidden; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #eee; }
+  th { background: #f2f0ff; color: #444; font-weight: 600; }
+  .clear-history { font-size: 12px; color: #999; cursor: pointer; text-decoration: underline; margin-top: 8px; display: inline-block; }
+  .empty-history { color: #888; font-size: 13px; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>CCAR-F Practice Test Generator</h1>
+  <div class="subtitle">Pulls a fresh, randomized 20-question set each time from a 40-question bank, weighted to the real exam's domain proportions (27/20/20/18/15). Distractors are length-balanced and answer positions shuffled. Your score history is saved in this browser.</div>
+  <div class="toolbar">
+    <button id="generateBtn">Generate New Test</button>
+    <button class="secondary" id="clearHistoryBtn">Clear History</button>
+  </div>
+  <form id="quizForm"></form>
+  <div class="submit-bar" id="submitBar" style="display:none;">
+    <button id="submitBtn" type="button">Submit Test</button>
+  </div>
+  <div id="results">
+    <div id="score"></div>
+    <div id="verdict"></div>
+    <div class="domain-breakdown" id="domainBreakdown"></div>
+    <span class="reset-link" id="retakeLink">Generate another test</span>
+  </div>
+
+  <div id="history">
+    <h2>Past Attempts (saved in this browser)</h2>
+    <div id="historyContent"></div>
+  </div>
+</div>
+
+<script>
+const questionBank = [
+{domain:"Agentic Architecture & Orchestration", q:"You're designing a Claude Code workflow where a main agent needs to research a topic across 15 files, summarize findings, and only then make an edit. The research step would otherwise consume most of the context window. What's the best architectural choice?", options:["Have the main agent read all 15 files directly into its own working context","Delegate the research to a subagent that returns only a condensed summary to the main agent's context","Split the task into 15 separate top-level conversations, one per file","Use a model with a larger context window for the main agent only"], correct:1, exp:"Delegating research to a subagent keeps the bulk of file-reading out of the main agent's context; only the summary returns. This is the core value of subagent architecture for context management."},
+{domain:"Agentic Architecture & Orchestration", q:"A hub-and-spoke multi-agent design assigns one orchestrator agent to delegate to several specialized subagents. What is the primary reliability risk this pattern introduces?", options:["Subagents are architecturally prevented from calling any tools","Subagents automatically share their full context with every other subagent","Hub-and-spoke designs are incompatible with Claude Code environments","The orchestrator becomes a bottleneck or single point of failure if it accumulates too much state"], correct:3, exp:"Centralizing coordination in one orchestrator creates a bottleneck: if it accumulates too much state or fails, the whole system is affected."},
+{domain:"Agentic Architecture & Orchestration", q:"When should you prefer an agentic loop (plan, act, observe, repeat) over a single-shot prompt?", options:["When the next step depends on results that can't be known until a tool call returns","When the task is fully specified upfront and needs no intermediate verification","Only when calling the Claude API directly, never inside Claude Code","Agentic loops should generally be avoided due to their cost"], correct:0, exp:"Agentic loops earn their cost when the next step depends on unpredictable results from a prior action (tool output, search result, etc.)."},
+{domain:"Agentic Architecture & Orchestration", q:"A subagent you designed keeps re-reading the same file on every turn, wasting tokens. What's the most likely design fix?", options:["Raise the subagent's max_tokens limit substantially","Switch the subagent to a smaller, cheaper model","Have the subagent cache or summarize the file into its own working memory instead of re-fetching it","Remove the subagent and fold its work into the main agent"], correct:2, exp:"Re-fetching the same data repeatedly is a context/token waste; the fix is caching or summarizing into working memory rather than re-reading."},
+{domain:"Agentic Architecture & Orchestration", q:"Which of the following best describes \"task decomposition\" in agentic architecture?", options:["Reducing the size of a model's context window","Compressing prior conversation history into a summary","Splitting a single API request across multiple network packets","Breaking a complex goal into smaller, independently executable subtasks assigned to agents or tools"], correct:3, exp:"Task decomposition is about breaking work into smaller, assignable units — not about context size or network-level concerns."},
+{domain:"Claude Code Configuration & Workflows", q:"What is the primary purpose of a CLAUDE.md file in a project repository?", options:["To provide persistent project-level context and conventions that Claude Code reads each session","To store API keys and secrets needed by the project","To serve as a full replacement for the project's README file","To hold CI/CD pipeline configuration exclusively, unrelated to Claude"], correct:0, exp:"CLAUDE.md is a persistent context file Claude Code reads for project conventions, not a secrets store or CI-only config."},
+{domain:"Claude Code Configuration & Workflows", q:"A team wants a repeatable, one-word way to trigger a specific multi-step review process in Claude Code across all their repos. What should they build?", options:["A separate, unrelated CLAUDE.md file per repo with no shared logic","A subagent that is never given a defined trigger condition","A custom slash command defined for that review process","A GitHub Action that does not involve Claude Code at all"], correct:2, exp:"Custom slash commands are built exactly for repeatable, named, multi-step triggers."},
+{domain:"Claude Code Configuration & Workflows", q:"In a CI/CD pipeline, what's a key reliability consideration when invoking Claude Code non-interactively (headless mode)?", options:["Headless invocations require no error handling since they cannot fail","The invocation should have bounded scope and a clear success/failure signal, with no interactive confirmation required","Headless mode retries every failed step indefinitely by default","CI/CD pipelines are structurally unable to invoke Claude Code"], correct:1, exp:"Headless/non-interactive invocations need bounded scope and clear success/failure signals since there's no human in the loop to intervene."},
+{domain:"Claude Code Configuration & Workflows", q:"Your organization wants engineers to inherit consistent coding conventions across every project without copy-pasting the same instructions repeatedly. What's the best mechanism?", options:["A hierarchy of CLAUDE.md files, such as an org-level file plus per-project overrides","Emailing the conventions document to each engineer individually","Re-typing the conventions into every prompt manually each session","Accepting that context cannot be shared consistently across projects"], correct:0, exp:"A CLAUDE.md hierarchy (org-level + project-level) is the mechanism for consistent, inherited context without duplication."},
+{domain:"Prompt Engineering & Structured Output", q:"You need Claude's response to reliably parse as valid JSON matching a specific schema for downstream automation. What's the most robust approach?", options:["Politely ask for JSON in the prompt and hope the model complies","Always switch to the largest available model instead","Parse the response as freeform text and regex out the relevant fields","Use tool use or structured output enforcement with a defined schema, rather than relying on prompt instructions alone"], correct:3, exp:"Tool use / schema-based structured output enforces structure far more reliably than instructions alone."},
+{domain:"Prompt Engineering & Structured Output", q:"A structured-output call occasionally returns a response that fails schema validation. What's the best resilient pattern?", options:["Immediately surface the raw validation error straight to the end user","Run a validation-and-retry loop that feeds the specific validation error back to Claude for correction","Silently discard invalid responses without logging them","Abandon structured output and switch to a freeform prompt permanently"], correct:1, exp:"A validation-and-retry loop that feeds the specific validation error back to the model is the standard resilient pattern."},
+{domain:"Prompt Engineering & Structured Output", q:"Few-shot prompting is most useful for which of the following?", options:["Demonstrating a desired output format or reasoning pattern so the model generalizes correctly","Reducing how much of the context window a prompt consumes","Eliminating the need for a system prompt entirely","Guaranteeing that hallucination never occurs"], correct:0, exp:"Few-shot examples demonstrate the desired pattern so the model generalizes the format/reasoning style."},
+{domain:"Prompt Engineering & Structured Output", q:"What's the key difference between \"programmatic enforcement\" and \"prompt-based guidance\" for structured output?", options:["There is no meaningful difference between the two approaches","Prompt-based guidance is always the more reliable of the two","Programmatic enforcement guarantees structural compliance; prompt-based guidance only increases its likelihood","Programmatic enforcement can never be combined with prompt instructions"], correct:2, exp:"Programmatic enforcement guarantees structural compliance (it's checked/validated); prompt-based guidance only nudges probability."},
+{domain:"Tool Design & MCP Integration", q:"When designing a tool description for Claude to call correctly and consistently, what matters most?", options:["Keeping the description as short as possible no matter what","A clear, unambiguous description of the tool's function, parameters, and when to use it","Omitting parameter descriptions entirely to save tokens","Tool descriptions have essentially no effect on call accuracy"], correct:1, exp:"Clarity on function, parameters, and usage conditions directly drives correct and consistent tool-call behavior."},
+{domain:"Tool Design & MCP Integration", q:"What is the core purpose of the Model Context Protocol (MCP)?", options:["To provide a standardized way for AI applications to connect to external tools, data, and systems","To fully replace the Claude API as the primary interface","To automatically compress conversation context on a schedule","To manage billing across multiple Anthropic accounts"], correct:0, exp:"MCP standardizes how AI applications connect to external tools/data/systems — it's an integration protocol, not a billing or compression mechanism."},
+{domain:"Tool Design & MCP Integration", q:"Your MCP server needs to support both a locally-run client (stdio) and a remotely hosted client (HTTP streaming). What's the key architectural consideration?", options:["The server must permanently commit to one transport and can never support the other","Local and remote clients require two entirely separate servers with different tools","HTTP streaming is not actually a supported MCP transport option","The transport layer should handle both stdio and HTTP streaming without changing the underlying tool logic"], correct:3, exp:"Good MCP server design separates transport (stdio vs. HTTP streaming) from tool logic, so the same tools work regardless of how the client connects."},
+{domain:"Tool Design & MCP Integration", q:"A tool call fails intermittently because a parameter is ambiguous about units, such as \"duration\" without specifying seconds or minutes. What's the best fix?", options:["Leave it as-is, since Claude will usually infer the right unit anyway","Remove the ambiguous parameter from the schema entirely","Update the tool schema or description to explicitly state the expected unit","Switch to using a different, unrelated model for this tool call"], correct:2, exp:"Ambiguity in tool parameter descriptions (like missing units) is a tool-design defect; fix it at the schema/description level."},
+{domain:"Context Management & Reliability", q:"A long-running agentic session is approaching its context window limit. What's a reliable strategy to continue the task without losing critical information?", options:["Summarize or compact older turns while explicitly preserving key decisions, then continue from there","Allow the session to simply fail once the limit is reached","Always restart the session from scratch with no summary carried over","Set max_tokens to an unbounded value to avoid the issue"], correct:0, exp:"Compaction/summarization that preserves key state is the standard approach to continuing past context limits."},
+{domain:"Context Management & Reliability", q:"What is the purpose of cache_control breakpoints in the Claude API?", options:["To permanently delete older messages from a conversation","To enforce a hard rate limit on API calls","To enforce structured output formatting on responses","To mark points in a prompt where content can be cached, cutting cost and latency on repeated requests"], correct:3, exp:"cache_control breakpoints mark cacheable prompt segments to cut cost and latency on repeated content."},
+{domain:"Context Management & Reliability", q:"In multi-turn conversation design, why is token budget management important?", options:["It generally isn't, since context windows are effectively unlimited","Without it, long conversations can silently truncate important early context or hit unexpected cost/latency limits","Token budget only ever matters when the input includes images","It affects billing only and has no effect on model behavior"], correct:1, exp:"Poor token budget management risks silent truncation of important context or unexpected cost/latency issues, especially in long multi-turn sessions."},
+{domain:"Agentic Architecture & Orchestration", q:"An orchestrator agent delegates three subtasks to subagents in parallel, then merges their outputs into a final report. One subagent returns a result that contradicts another. What's the most architecturally sound way to handle this?", options:["Automatically discard both conflicting results and skip that section of the report","Let whichever subagent finished first take precedence, since speed implies confidence","Have the orchestrator surface the conflict and reconcile it using its own judgment or a targeted follow-up call","Re-run all three subagents from scratch until their outputs happen to agree"], correct:2, exp:"The orchestrator is the right layer to reconcile conflicting subagent outputs — it has visibility across all branches, whereas any single subagent doesn't. Discarding data loses information, and speed or brute-force re-running aren't reliable conflict-resolution strategies."},
+{domain:"Agentic Architecture & Orchestration", q:"You're evaluating whether a workflow needs a multi-agent design or a single agent with tools. The task is: fetch a webpage, extract pricing data, and format it as a table. What's the better call?", options:["A single agent with a fetch tool and a formatting step, since the steps are sequential and don't need independent context","A three-agent pipeline, one per step, so each can specialize narrowly","A hub-and-spoke design with a dedicated orchestrator managing the fetch and format subagents","An agentic loop that repeatedly re-fetches the page until the format is perfect"], correct:0, exp:"Multi-agent overhead pays off when subtasks need isolated context or specialized instructions that would clutter a shared context. A simple sequential fetch-extract-format task doesn't need that separation — a single agent with tools is simpler and just as effective."},
+{domain:"Agentic Architecture & Orchestration", q:"A subagent is given a narrow, well-defined tool set and a specific goal, then returns control to the orchestrator when done. What principle does this reflect?", options:["Token minimization — subagents always use fewer tokens than the main agent by design","Model downgrading — subagents must use a smaller model than the orchestrator","Statelessness — subagents cannot retain any information once invoked","Context isolation — keeping the subagent's working context scoped to only what its subtask requires"], correct:3, exp:"Scoping a subagent to a narrow tool set and goal is about context isolation, not an inherent guarantee about token usage, model size, or statelessness — none of which are required properties of subagents."},
+{domain:"Agentic Architecture & Orchestration", q:"During a long agentic loop, the agent keeps calling the same search tool with slightly reworded queries without making progress toward the goal. What does this behavior most likely indicate?", options:["The search tool itself is broken and should be removed from the agent's toolset entirely","The loop lacks a clear termination or progress-check condition, so it should be redesigned to detect and break out of unproductive cycles","This is expected behavior and will resolve itself given enough iterations","The agent's temperature setting is too low and needs to be increased"], correct:1, exp:"Repeated unproductive tool calls signal a missing progress/termination check in the loop design — the fix is architectural (detect lack of progress, break or escalate), not a tool removal or a temperature tweak."},
+{domain:"Agentic Architecture & Orchestration", q:"Which scenario best justifies using a hub-and-spoke orchestration pattern over a simple linear chain of steps?", options:["The task naturally decomposes into independent subtasks that can be dispatched and evaluated by a central coordinator","The task must be completed in exactly one prompt with no tool calls at all","The task only ever requires a single deterministic sequence of steps with no branching","The team wants to reduce the total number of agents involved in the workflow"], correct:0, exp:"Hub-and-spoke earns its complexity when subtasks are independent enough to dispatch and evaluate centrally. A strictly linear, single-path task doesn't need a coordinator, and the pattern doesn't inherently reduce agent count."},
+{domain:"Claude Code Configuration & Workflows", q:"Two teams share a monorepo but want different coding conventions enforced in their respective subdirectories. How should this be handled with CLAUDE.md?", options:["Maintain a single CLAUDE.md at the root and manually remind Claude of exceptions in every session","Use separate GitHub repositories instead, since CLAUDE.md cannot vary within one repo","Store team-specific conventions in a Slack channel instead of CLAUDE.md","Place a CLAUDE.md at the repo root for shared conventions, plus a CLAUDE.md in each subdirectory for team-specific overrides"], correct:3, exp:"CLAUDE.md supports a hierarchy — root-level for shared conventions and subdirectory-level for overrides — which is exactly designed for this multi-team-in-one-repo scenario."},
+{domain:"Claude Code Configuration & Workflows", q:"A custom slash command is meant to run a multi-step release checklist. During testing, it works fine interactively but fails unpredictably when triggered from a script. What's the most likely cause?", options:["Slash commands are not supported outside of interactive sessions under any circumstances","The command relies on interactive confirmation steps that don't resolve properly in a non-interactive context","The release checklist has too many steps for a slash command to handle","Scripts cannot invoke Claude Code at all, regardless of configuration"], correct:1, exp:"A common failure mode when moving from interactive to scripted/headless use is leftover reliance on interactive confirmations. Slash commands themselves can run non-interactively; the issue is usually design, not a hard limitation."},
+{domain:"Claude Code Configuration & Workflows", q:"What's the main tradeoff to weigh when deciding how much detail to put into a project's CLAUDE.md file?", options:["More detail generally improves consistency but risks bloating context and burying the most important conventions","There is no tradeoff — CLAUDE.md files should always contain as much detail as possible","CLAUDE.md files are capped at a fixed number of lines, so detail is irrelevant until that limit is hit","Detail only matters for CI/CD use cases, not for interactive sessions"], correct:0, exp:"CLAUDE.md content competes for context budget like anything else — more detail helps consistency but can bury priorities or waste tokens if not curated, which is the real tradeoff to manage."},
+{domain:"Claude Code Configuration & Workflows", q:"A headless Claude Code invocation in a CI pipeline needs to fail the build if the agent cannot complete its task, rather than silently continuing. What should the pipeline configuration ensure?", options:["The pipeline should ignore the invocation's outcome and always proceed to the next step","The agent should be given unlimited retries so it always eventually succeeds","The invocation returns a clear, checkable exit/status signal that the pipeline step interprets to determine pass or fail","Headless mode should be avoided entirely in favor of manual review for every build"], correct:2, exp:"Reliable CI integration depends on a clear success/failure signal the pipeline can act on — ignoring outcomes or relying on infinite retries undermines the point of automated gating."},
+{domain:"Prompt Engineering & Structured Output", q:"A prompt asks Claude to output a JSON object, but roughly 1 in 20 responses includes a stray sentence before the JSON, breaking naive parsing. What's the most reliable fix?", options:["Add the word 'please' to the prompt to increase compliance","Define the expected output via a tool schema so the response is constrained to structured data rather than free text","Increase the temperature so responses vary less","Manually strip the first line of every response before parsing"], correct:1, exp:"Tool-based structured output constrains the response format directly, which is far more reliable than prompt phrasing tweaks, temperature changes, or post-hoc string stripping that assumes a specific failure pattern."},
+{domain:"Prompt Engineering & Structured Output", q:"You're deciding between zero-shot and few-shot prompting for a classification task with a somewhat unusual label taxonomy. Which factor most strongly favors few-shot?", options:["The label taxonomy is non-standard enough that examples are needed to convey the intended categories clearly","Few-shot prompting is always strictly better regardless of task complexity","Zero-shot prompting cannot be used for classification tasks at all","Few-shot prompting eliminates the need for a system prompt"], correct:0, exp:"Few-shot earns its context cost when the task's expected pattern (like a non-standard taxonomy) isn't obvious from instructions alone — examples fill that gap. It's not universally superior, nor does it replace system prompts."},
+{domain:"Prompt Engineering & Structured Output", q:"A validation-and-retry loop for structured output keeps failing on the same field after three attempts. What does this most likely indicate?", options:["The retry loop is working as intended and should simply run more attempts","The model is incapable of producing structured output and the approach should be abandoned","The field should be removed from the schema since it cannot be reliably populated","The underlying instructions or schema description for that field may be ambiguous or contradictory, not just a transient model error"], correct:3, exp:"Consistent failure on the same field across retries points to an ambiguous or contradictory schema/instruction, not randomness — the fix is clarifying the definition, not just adding more retries or removing the field."},
+{domain:"Prompt Engineering & Structured Output", q:"When is prompt-based guidance (instructions alone, without schema enforcement) an acceptable choice for structured output?", options:["Whenever the output needs to be parsed programmatically with zero tolerance for errors","Only when using older Claude models that don't support tool use","When the downstream use case can tolerate occasional format deviations and doesn't require guaranteed parseability","Prompt-based guidance should never be used under any circumstances"], correct:2, exp:"Prompt-based guidance is reasonable when occasional deviation is tolerable; it's the wrong choice when downstream automation needs guaranteed structure, which is where programmatic enforcement is required instead."},
+{domain:"Tool Design & MCP Integration", q:"A tool named 'search' accepts a single 'query' string parameter but is used for three very different purposes (web search, file search, and database lookup) depending on context clues in the query text. What design issue does this illustrate?", options:["An overloaded tool interface that would benefit from being split into distinct, purpose-specific tools with clearer names and parameters","This is an efficient design since it minimizes the total number of tools exposed to the model","The issue is with the model's reasoning, not the tool design","Adding more examples to the system prompt is the only way to fix this"], correct:0, exp:"A single overloaded tool inferring intent from context is a classic design smell — splitting into purpose-specific tools with clear names/parameters improves call accuracy far more reliably than prompting around an ambiguous interface."},
+{domain:"Tool Design & MCP Integration", q:"An MCP client needs to discover what tools, resources, and prompts a server exposes before using them. What mechanism does MCP provide for this?", options:["The client must hardcode the list of available tools in advance with no runtime discovery","MCP servers broadcast their tools over a separate, unrelated network protocol","A capabilities negotiation and discovery process that occurs as part of the client-server connection","Discovery is only possible by manually reading the server's source code"], correct:2, exp:"MCP defines a capabilities negotiation/discovery process as part of establishing the connection, so clients can learn what's available at runtime rather than needing hardcoded knowledge or source access."},
+{domain:"Tool Design & MCP Integration", q:"A remote MCP server using HTTP streaming needs to notify a connected client of a long-running operation's progress. Which capability makes this possible?", options:["The client must poll the server repeatedly on a separate connection since streaming updates aren't supported","The transport supports streaming updates over the connection rather than only a single request/response","Progress updates require switching to stdio transport, which is the only one that supports them","MCP has no mechanism for communicating progress on long-running operations"], correct:1, exp:"HTTP streaming transport is specifically suited to sending incremental updates over an open connection, which is why it supports progress notifications more naturally than a single-shot request/response model."},
+{domain:"Tool Design & MCP Integration", q:"You're reviewing a tool schema where a required parameter has no description and an ambiguous name like 'val'. What's the most likely downstream consequence?", options:["No consequence — Claude always infers parameter meaning correctly regardless of naming","The tool will fail to register with the client entirely","This only affects human developers reading the code, not the model's tool calls","Claude may call the tool with incorrect or inconsistent values because the parameter's purpose isn't clear from the schema alone"], correct:3, exp:"Poorly named, undocumented parameters are a direct cause of incorrect or inconsistent tool calls, since the model relies on the schema (names, descriptions) to understand intended usage."},
+{domain:"Context Management & Reliability", q:"A production agent handles multi-turn conversations that sometimes run for hours. Without intervention, what's the most likely failure mode as the conversation grows?", options:["Older but still-relevant context gets pushed out or truncated, degrading the agent's ability to reference earlier decisions","The agent will always produce shorter responses over time regardless of content","API costs will decrease steadily as the conversation continues","The conversation will automatically compact itself with no design work required"], correct:0, exp:"Without an explicit compaction/summarization strategy, growing conversations risk truncating relevant earlier context — this doesn't happen automatically and isn't primarily a cost or response-length issue."},
+{domain:"Context Management & Reliability", q:"A workflow sends a large, mostly-static system prompt with every API call alongside a small amount of changing user content. Which optimization is most directly applicable?", options:["Shortening the user content instead, since the system prompt cannot be optimized","Switching to a smaller model to offset the token cost","Removing the system prompt entirely to reduce token usage","Marking the static portion with a cache_control breakpoint so it can be reused across calls"], correct:3, exp:"A large static prefix reused across calls is exactly the scenario cache_control breakpoints are designed for — caching that unchanging portion cuts cost and latency without touching the prompt's content."},
+{domain:"Context Management & Reliability", q:"An agent's context compaction strategy summarizes older turns but repeatedly drops a critical early constraint the user specified, causing later errors. What does this suggest about the compaction approach?", options:["Compaction should be disabled entirely for all long conversations going forward","The summarization step isn't reliably preserving key decisions/constraints and needs to explicitly flag and retain them","The user should repeat the constraint in every single message instead","This is unavoidable and inherent to any form of context compaction"], correct:1, exp:"The problem is a compaction design flaw — summarization needs to explicitly identify and preserve critical constraints/decisions, not drop them. Disabling compaction entirely or offloading the burden to the user avoids fixing the actual issue."}
+];
+
+const domainWeights = {
+  "Agentic Architecture & Orchestration": 0.27,
+  "Claude Code Configuration & Workflows": 0.20,
+  "Prompt Engineering & Structured Output": 0.20,
+  "Tool Design & MCP Integration": 0.18,
+  "Context Management & Reliability": 0.15
+};
+
+const TEST_SIZE = 20;
+const HISTORY_KEY = "ccarf_practice_history";
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generateTest() {
+  const byDomain = {};
+  questionBank.forEach(q => {
+    if (!byDomain[q.domain]) byDomain[q.domain] = [];
+    byDomain[q.domain].push(q);
+  });
+
+  let selected = [];
+  const domains = Object.keys(domainWeights);
+  let allocated = 0;
+  const counts = {};
+  domains.forEach((d, idx) => {
+    if (idx === domains.length - 1) {
+      counts[d] = TEST_SIZE - allocated;
+    } else {
+      const c = Math.round(domainWeights[d] * TEST_SIZE);
+      counts[d] = c;
+      allocated += c;
+    }
+  });
+
+  domains.forEach(d => {
+    const pool = shuffle(byDomain[d] || []);
+    const n = Math.min(counts[d], pool.length);
+    selected = selected.concat(pool.slice(0, n));
+  });
+
+  if (selected.length < TEST_SIZE) {
+    const remaining = shuffle(questionBank.filter(q => !selected.includes(q)));
+    selected = selected.concat(remaining.slice(0, TEST_SIZE - selected.length));
+  }
+
+  return shuffle(selected).slice(0, TEST_SIZE);
+}
+
+let currentTest = [];
+
+function renderTest() {
+  currentTest = generateTest();
+  const form = document.getElementById('quizForm');
+  form.innerHTML = '';
+  let currentDomain = "";
+
+  currentTest.forEach((item, i) => {
+    if (item.domain !== currentDomain) {
+      currentDomain = item.domain;
+      const h = document.createElement('div');
+      h.className = 'domain-header';
+      h.textContent = currentDomain;
+      form.appendChild(h);
+    }
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = 'card-' + i;
+
+    const qText = document.createElement('div');
+    qText.className = 'question-text';
+    qText.textContent = (i+1) + '. ' + item.q;
+    card.appendChild(qText);
+
+    item.options.forEach((opt, j) => {
+      const optDiv = document.createElement('div');
+      optDiv.className = 'option';
+      optDiv.id = 'opt-' + i + '-' + j;
+      const input = document.createElement('input');
+      input.type = 'radio';
+      input.name = 'q' + i;
+      input.value = j;
+      input.id = 'input-' + i + '-' + j;
+      const label = document.createElement('label');
+      label.htmlFor = 'input-' + i + '-' + j;
+      label.textContent = String.fromCharCode(65+j) + ') ' + opt;
+      optDiv.appendChild(input);
+      optDiv.appendChild(label);
+      optDiv.onclick = () => input.checked = true;
+      card.appendChild(optDiv);
+    });
+
+    const exp = document.createElement('div');
+    exp.className = 'explanation';
+    exp.id = 'exp-' + i;
+    exp.textContent = item.exp;
+    card.appendChild(exp);
+
+    form.appendChild(card);
+  });
+
+  document.getElementById('submitBar').style.display = 'block';
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('results').classList.remove('show');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveAttempt(record) {
+  try {
+    const history = loadHistory();
+    history.push(record);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  } catch (e) {
+    console.warn('Could not save history', e);
+  }
+}
+
+function renderHistory() {
+  const container = document.getElementById('historyContent');
+  const history = loadHistory();
+  if (history.length === 0) {
+    container.innerHTML = '<div class="empty-history">No attempts recorded yet. Take a test above to start tracking your progress.</div>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Date</th><th>Score</th><th>%</th></tr></thead><tbody>';
+  history.slice().reverse().forEach(h => {
+    const pct = Math.round((h.score / h.total) * 100);
+    html += '<tr><td>' + h.date + '</td><td>' + h.score + ' / ' + h.total + '</td><td>' + pct + '%</td></tr>';
+  });
+  html += '</tbody></table><span class="clear-history" onclick="clearHistory()">Clear all history</span>';
+  container.innerHTML = html;
+}
+
+function clearHistory() {
+  try { localStorage.removeItem(HISTORY_KEY); } catch (e) {}
+  renderHistory();
+}
+window.clearHistory = clearHistory;
+
+document.getElementById('generateBtn').addEventListener('click', renderTest);
+document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
+document.getElementById('retakeLink').addEventListener('click', renderTest);
+
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const form = document.getElementById('quizForm');
+  let score = 0;
+  const domainStats = {};
+  currentTest.forEach((item, i) => {
+    if (!domainStats[item.domain]) domainStats[item.domain] = {correct:0, total:0};
+    domainStats[item.domain].total++;
+    const selected = form.querySelector('input[name="q' + i + '"]:checked');
+    const selectedVal = selected ? parseInt(selected.value) : -1;
+    const isCorrect = selectedVal === item.correct;
+    if (isCorrect) { score++; domainStats[item.domain].correct++; }
+
+    item.options.forEach((opt, j) => {
+      const optDiv = document.getElementById('opt-' + i + '-' + j);
+      if (j === item.correct) optDiv.classList.add('correct');
+      else if (j === selectedVal) optDiv.classList.add('incorrect');
+    });
+    document.getElementById('exp-' + i).classList.add('show');
+  });
+
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('score').textContent = score + ' / ' + currentTest.length;
+  let verdict = 'Below 14: revisit the corresponding domain notes/courses before your next attempt.';
+  if (score >= 18) verdict = 'Strong readiness on this material.';
+  else if (score >= 14) verdict = 'Solid, but review missed domains before exam day.';
+  document.getElementById('verdict').textContent = verdict;
+
+  const breakdown = document.getElementById('domainBreakdown');
+  breakdown.innerHTML = '';
+  Object.keys(domainStats).forEach(d => {
+    const row = document.createElement('div');
+    const stat = domainStats[d];
+    row.innerHTML = '<span>' + d + '</span><span>' + stat.correct + ' / ' + stat.total + '</span>';
+    breakdown.appendChild(row);
+  });
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+
+  saveAttempt({
+    date: new Date().toLocaleString(),
+    score: score,
+    total: currentTest.length,
+    domainStats: domainStats
+  });
+  renderHistory();
+});
+
+// initial load
+renderTest();
+renderHistory();
+</script>
+</body>
+</html>
