@@ -25,7 +25,7 @@ The three domains marked "new vs. Foundations" (governance, stakeholder/lifecycl
 - MCP Advanced Topics → feeds Integration domain directly
 - Building with the Claude API (structured output, prompt engineering) → feeds Claude Models, Prompting & Context Engineering
 - Claude Code 101 / in Action → feeds Developer Productivity & Operational Enablement (smaller domain, 7%)
-- **Gap (superseded 2026-10-02):** this originally flagged Governance/Safety/Risk, Stakeholder Communication/Lifecycle, and Evaluation/Testing/Optimisation as unaddressed. As of 2026-10-02: Governance/Safety/Risk and Evaluation/Testing/Optimisation are both complete (Modules 3 and 2); Stakeholder Communication/Lifecycle is in progress (Module 4). Only Developer Productivity & Operational Enablement (7%) remains untouched.
+- **Gap (fully closed 2026-10-06):** this originally flagged Governance/Safety/Risk, Stakeholder Communication/Lifecycle, and Evaluation/Testing/Optimisation as unaddressed. As of 2026-10-02, Governance/Safety/Risk and Evaluation/Testing/Optimisation were complete (Modules 3 and 2) and Stakeholder Communication/Lifecycle was in progress (Module 4). **As of 2026-10-06, all five official modules are complete** — Module 4 (Stakeholder Communication/Lifecycle) and Module 5 (Developer Productivity & Operational Enablement) both finished. No domain gap remains.
 
 ## ✅ OFFICIAL COURSE FOUND (2026-09-23): Claude Certified Architect – Professional Prep Course
 Confirmed directly from Rahm's logged-in Anthropic Academy view — free, register button live. This replaces the "no course identified" gaps below with a real, official curriculum.
@@ -43,27 +43,25 @@ Confirmed directly from Rahm's logged-in Anthropic Academy view — free, regist
 
 **Recommended prerequisites (not required) per the course page:** Claude 101 ✅, Claude Code in Action ✅, AI Fluency: Framework & Foundations (⚠️ check — may be different from "AI Fluency for Small Businesses," which is only 6/10 done), Building with the Claude API ✅, Introduction to Model Context Protocol (skipped, went straight to Advanced), **AI Capabilities and Limitations (new course, not previously tracked — need to check registration status)**.
 
-## CCAR-P Course Coverage (updated tracker — 2026-10-02 Drive audit)
+## CCAR-P Course Coverage (updated tracker — 2026-10-06: ALL MODULES COMPLETE)
 
-**Correction (2026-10-02):** An earlier check of the Google Drive `CCAR-P` folder mislabeled which Drive folder was Module 2 vs. Module 3. Verified directly against folder IDs this time — the mapping below is confirmed correct.
+**Correction (2026-10-02):** An earlier check of the Google Drive `CCAR-P` folder mislabeled which Drive folder was Module 2 vs. Module 3. Verified directly against folder IDs since then — the mapping below is confirmed correct.
 
 | Drive Module | Maps to Official Lesson | Domain(s) | Status |
 |---|---|---|---|
 | Module 1 | Lesson 1, "Claude Platform & Solution Design" (238 min) | Solution Design & Architecture (17%) + Claude Models, Prompting & Context Engineering (13%) | **✅ COMPLETE (2026-09-26)** — all 33 screens through "Recap · Assembly & Recap" |
 | Module 2 | Lesson 2, "Enterprise Integration & Production" (158 min) | Integration (19%) — **and** Evaluation, Testing & Optimisation (16%), which turns out to be folded in here, not missing | **✅ COMPLETE (2026-09-29)** — 21 screens through "Module Complete · Architect," covering Evals, POC-to-Prod, Sizing/Feasibility, Integration patterns, and A/B Testing & Observability |
 | Module 3 | Lesson 3, "Responsible AI, Safety & Risk for Architects" (114 min) | Governance, Safety & Risk Management (14%) | **✅ COMPLETE (2026-10-02)** — 22 screens through "Module Complete · Architect," covering Alignment, Guardrails, Fairness, Review Routing, and Compliance |
-| Module 4 | Lesson 4, "Stakeholder Engagement, Lifecycle & GTM" (178 min) | Stakeholder Communication & Lifecycle Management (14%) | **🔶 IN PROGRESS (started 2026-10-02)** — 3 screens so far: Orientation, Discovery, Watch Out Discovery |
-| Module 5 | Lesson 5, "Team Enablement & Operational Productivity" (45 min) | Developer Productivity & Operational Enablement (7%) | Not started — folder exists, no lesson docs yet |
+| Module 4 | Lesson 4, "Stakeholder Engagement, Lifecycle & GTM" (178 min) | Stakeholder Communication & Lifecycle Management (14%) | **✅ COMPLETE (2026-10-06)** — 20 screens through "Module Complete · Architect," covering Discovery, Tradeoffs & GTM (demo design, decision framing), Feedback Loops (SLAs, production signal governance), Documentation (handoff/compliance/returning-architect readers), and Entry Point & Outcomes (multi-platform routing, customer outcome docs) |
+| Module 5 | Lesson 5, "Team Enablement & Operational Productivity" (45 min) | Developer Productivity & Operational Enablement (7%) | **✅ COMPLETE (2026-10-06)** — 10 screens through "Module Complete · Architect," covering Team Setup (shared environment, rollout, Skill distribution governance, spend posture), Dev Workflows (diligence, verification checklists), and Operational Support (symptom-to-cause diagnosis, runbooks, escalation paths) |
 
-**Big update: the Evaluation, Testing & Optimisation "gap" is closed.** Earlier tracking (through 2026-09-23) assumed this domain had no dedicated course content and would need supplemental material. Module 2 turned out to fold in a full eval curriculum — evals-as-acceptance-criteria, the eval workflow (task definition → golden dataset → automated checks → judge scoring → interpret/act), the code-based/model-based/human-review grading ladder with judge calibration, multi-turn evals, plus structured A/B testing, shadow testing, observability instrumentation layers, and a failure taxonomy (prompt failure / hallucination / model mismatch / orchestrator-workers failure). This is now one of the best-covered domains in the practice bank.
+**The whole official CCAR-P Prep Course is now done, as of 2026-10-06.** All 7 exam domains have real, official-source coverage:
+- **Evaluation, Testing & Optimisation** closed via Module 2 — evals-as-acceptance-criteria, the eval workflow, the code/model/human grading ladder with judge calibration, multi-turn evals, A/B and shadow testing, observability layers, and the failure taxonomy (prompt failure / hallucination / model mismatch / orchestrator-workers failure).
+- **Governance, Safety & Risk Management** closed via Module 3 — guardrail placement and fail-open/fail-closed design, refusal handling, skill supply-chain security, the four fairness entry points, audience-specific transparency, and obligation→control→owner→evidence compliance mapping.
+- **Stakeholder Communication & Lifecycle Management** closed via Module 4 — discovery's listen/translate/write-down filter, tradeoff presentation and demo design for GTM, the feedback-loop decision layer and SLA traceability, three-reader documentation (handoff recipient / compliance reviewer / returning architect), and multi-platform entry-point/outcome documentation.
+- **Developer Productivity & Operational Enablement** closed via Module 5 — shared team environment baselines, champion-then-batch rollout, governed Skill distribution mechanisms, dev-workflow diligence and verification checklists, and operational support via symptom-to-cause runbooks.
 
-**Governance, Safety & Risk Management is now also complete.** Module 3 covered: guardrail placement (input screening / output screening / tool-call authorization), model-based vs. deterministic checks per decision point, fail-open vs. fail-closed design, refusal handling (`stop_reason: "refusal"` / `stop_details`), skill supply-chain security (audit → approve/reject/remediate, sandboxing, trusted-source policy), fairness (the four entry points for unequal outcomes: retrieval corpus, prompt framing, few-shot examples, downstream routing), audience-specific transparency (affected user vs. regulator vs. build team), and compliance (obligation → control → owner → evidence mapping for HIPAA/FedRAMP/data residency, plus the training-use-vs-retention distinction).
-
-**Stakeholder Communication & Lifecycle Management is now underway.** Module 4's first lessons cover discovery as structured elicitation: the listen → translate → write-down filter, translating stakeholder preferences ("seamless," "easy," "fast") into testable constraints, the four question buckets (what the system must do / must not do / must cost / must prove), and the discovery translation table format.
-
-**Remaining gap:** Developer Productivity & Operational Enablement (7%, smallest domain) — Module 5 not yet started. Partial carryover still holds from Claude Code 101/in Action plus the Module 1 Skill-packaging content.
-
-**Net effect:** 3 of 5 modules fully complete (Solution Design, Integration, Governance/Safety/Risk — which together also fully cover Evaluation/Testing/Optimisation and Claude Models/Prompting), 1 module started (Stakeholder/Lifecycle), 1 module not started (Developer Productivity, smallest at 7%). This is a dramatically stronger position than the 2026-09-23 tracker reflected — only one real gap remains, and it's the lightest-weighted domain.
+**Net effect:** all 5 modules complete, all 7 domains covered by real official-source material. There is no remaining content gap in the CCAR-P Prep Course itself. Remaining open items are logistics (Bounteous/Pearson VUE nomination confirmation) rather than study content.
 
 ## CCAR-P Detailed Domain Topics (source: tutorialsdojo.com, cross-checked against claudecertificationguide.com)
 
@@ -95,12 +93,12 @@ Confirmed directly from Rahm's logged-in Anthropic Academy view — free, regist
 - Human-in-the-loop validation for sensitive/high-impact outputs
 - Compliance: GDPR, HIPAA, FedRAMP; bias, fairness, transparency, responsible data use
 
-### Domain 6: Stakeholder Communication & Lifecycle Management (14%) — 🔶 IN PROGRESS (Module 4 started 2026-10-02)
+### Domain 6: Stakeholder Communication & Lifecycle Management (14%) — ✅ COMPLETE (Module 4, 2026-10-06)
 - Discovery/requirements gathering across business, technical, legal, security, ops stakeholders
 - Communicating architecture/trade-offs to technical and non-technical audiences; documentation
 - Managing feedback across the full lifecycle: design → implementation handoff → monitoring → continuous improvement
 
-### Domain 7: Developer Productivity & Operational Enablement (7%)
+### Domain 7: Developer Productivity & Operational Enablement (7%) — ✅ COMPLETE (Module 5, 2026-10-06)
 - Configuring Claude Code and shared dev environments for teams (security + consistency)
 - AI-assisted development workflows: code analysis, implementation, testing, documentation
 - Debugging/operational support using Claude-assisted tooling
@@ -111,24 +109,26 @@ Confirmed directly from Rahm's logged-in Anthropic Academy view — free, regist
 - Official "Claude Certified Architect – Professional Certification Prep Course" (name referenced, not yet located/confirmed directly)
 - Tutorials Dojo's CCAR-P Practice Exams (third-party, multiple-choice + multiple-response, with explanations)
 
-## CCAR-P Practice Test Generator — built 2026-09-23, expanded 2026-10-02
-`ccarp-practice-test-generator.html` in the repo (`programs/anthropic-ccar/practice-tests/`): now a 93-question bank (up from 64) across all 7 domains, weighted to documented proportions, length-balanced distractors, positions shuffled across A/B/C/D from the start. Test size increased from 30 to 40 questions per run to match the larger bank.
+## CCAR-P Practice Test Generator — built 2026-09-23, expanded 2026-10-02 and 2026-10-06
+`ccarp-practice-test-generator.html` in the repo (`programs/anthropic-ccar/practice-tests/`): now a 112-question bank (up from 64) across all 7 domains, weighted to documented proportions, length-balanced distractors, positions shuffled across A/B/C/D from the start. Test size increased from 30 → 40 → 45 questions per run to keep pace with the larger bank.
 
-**2026-10-02 expansion:** 30 new questions added, grounded directly in real lesson content read from the Module 2, 3, and 4 Google Drive docs (not third-party material) — covering enterprise integration patterns (entry-point selection, the constraint-to-integration compliance matrix, identity/SSO, data handling, multi-tenant key isolation), use-case sizing and feasibility (the four AI properties, feasibility verdicts, ROI mapping), the evals framework (eval workflow stages, the code/model/human grading ladder, judge calibration, multi-turn evals), A/B testing and observability (shadow testing vs. live A/B, the failure taxonomy), guardrails (fail-open vs. fail-closed, skill supply-chain audits), fairness (the four entry points for unequal outcomes, audience-specific transparency), compliance (obligation → control → owner → evidence mapping), and discovery (the listen/translate/write-down filter, the four question buckets). These are intentionally harder questions — written to require recognizing the specific named framework/step/property at play, not just picking the obviously-safe answer.
+**2026-10-02 expansion:** 30 new questions added, grounded directly in real lesson content read from the Module 2, 3, and (early) Module 4 Google Drive docs (not third-party material) — covering enterprise integration patterns, use-case sizing and feasibility, the evals framework, A/B testing and observability, guardrails, fairness, compliance, and discovery.
 
-**Caveat carried in the tool itself:** questions are original and written to match real course content (where grounded in Module 2–4 Drive docs) or documented domain topics (for the original 64-question bank), not reproductions of any real exam or vendor content. The 7-domain weighting/format is still third-party (tutorialsdojo.com + claudecertificationguide.com) for the official exam blueprint, not yet confirmed against Anthropic's own materials — but the new questions' underlying content is first-party, pulled directly from the official Anthropic Academy CCAR-P Prep Course lesson docs.
+**2026-10-06 expansion:** 19 more questions added now that Modules 4 and 5 are fully complete, grounded in the rest of Module 4 (tradeoff presentation and GTM demo design — the decision frame, capabilities-vs-scenario demos, limit placement; production feedback loops and SLA traceability; three-reader handoff/compliance/returning-architect documentation; multi-platform entry-point and customer-outcome documentation) and all of Module 5 (shared team environment setup, champion-then-batch rollout, governed Skill distribution mechanisms, dev-workflow diligence and verification checklists, operational support via symptom-to-cause runbooks). **Every exam domain is now grounded in real official-source material — no domain in the bank still relies solely on third-party topic lists.**
+
+**Caveat carried in the tool itself:** questions are original and written to match real course content or documented domain topics, not reproductions of any real exam or vendor content. The 7-domain weighting/format is still third-party (tutorialsdojo.com + claudecertificationguide.com) for the official exam blueprint, not yet confirmed against Anthropic's own materials — but the questions' underlying content is first-party, pulled directly from the official Anthropic Academy CCAR-P Prep Course lesson docs.
 
 ## Unverified Exam Logistics (via Gemini AI-mode summary, 2026-09-23)
 - Cost: $175 USD (free for eligible Anthropic partners) — differs from CCAR-F's $125
 - Validity: 12 months, renewable via reassessment
 - **Not yet confirmed against Anthropic's own site — treat as directional only.**
 
-## Next Steps (updated 2026-10-02)
-1. **Finish Module 4** (Stakeholder Communication & Lifecycle Management, 14%) — only 3 of an estimated 20+ screens in so far.
-2. **Start and finish Module 5** (Developer Productivity & Operational Enablement, 7%) — smallest domain, not yet started, folder is still empty.
-3. Rahm is taking the practice quiz this weekend (week of 2026-10-02) — use the expanded 93-question/40-per-run generator to pressure-test retention across the now-complete domains (Solution Design, Integration, Evaluation/Testing, Governance/Safety) before Module 4/5 are done; expect lower scores on Stakeholder/Lifecycle and Developer Productivity since those aren't fully studied yet.
-4. Resolve the Bounteous/Pearson VUE nomination mismatch (flagged above) before scheduling the real exam — confirm Professional is actually sanctioned on Bounteous's side.
-5. Re-run the deadline math once nomination/scheduling is sorted — don't assume Oct 31 or the Foundations-era 30-day framing still applies to Professional.
+## Next Steps (updated 2026-10-06)
+1. **All 5 official modules are now complete** — no remaining course content gap. Use the 112-question/45-per-run practice generator for full-coverage review across all 7 domains; a low score anywhere now reflects retention, not unstudied material.
+2. Run a full practice test (or several) this week and log scores in the generator's history to find any domain that needs a second pass before scheduling the real exam.
+3. Resolve the Bounteous/Pearson VUE nomination mismatch (flagged above) before scheduling the real exam — confirm Professional is actually sanctioned on Bounteous's side.
+4. Re-run the deadline math once nomination/scheduling is sorted — don't assume Oct 31 or the Foundations-era 30-day framing still applies to Professional.
+5. Once practice scores are consistently strong across all domains, schedule the Pearson VUE exam.
 
 ---
 
