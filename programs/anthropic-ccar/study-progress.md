@@ -118,6 +118,14 @@ Confirmed directly from Rahm's logged-in Anthropic Academy view — free, regist
 
 **Caveat carried in the tool itself:** questions are original and written to match real course content or documented domain topics, not reproductions of any real exam or vendor content. The 7-domain weighting/format is still third-party (tutorialsdojo.com + claudecertificationguide.com) for the official exam blueprint, not yet confirmed against Anthropic's own materials — but the questions' underlying content is first-party, pulled directly from the official Anthropic Academy CCAR-P Prep Course lesson docs.
 
+**Refactor (prompted by Rahm asking whether this could be sold as an app):** the 57 questions that were closely grounded in specific named frameworks/terminology from the official course (Module 1's platform-map vocabulary, plus all of the 2026-10-02 and 2026-10-06 Module 2–5 batches) were rewritten from scratch — same underlying architecture/ops concept tested, but genericized scenarios with no course-specific named frameworks, product terminology, or close paraphrasing of lesson text. The original 55 pre-10-02 questions (already written to match documented topic lists rather than course text) were left as-is. Every question is now tagged:
+- **`source`: `"original"`** (57) — the rewritten, genericized set, or **`"generic"`** (55) — the pre-existing industry-pattern set. A dropdown in the tool filters by this.
+- **`difficulty`: `"less"`** (18), **`"challenging"`** (46), or **`"very"`** (48) — a second dropdown filters by this.
+
+Narrowing both filters at once can return fewer than 45 questions for a run (the bank isn't evenly split across every combination) — the tool now shows a note when this happens and uses whatever's available rather than erroring.
+
+**Still a caveat for any commercial use:** this rewrite was done by Claude in one pass, not independently legal-reviewed. Before publishing, selling, or distributing any version of this quiz, treat the "Original only" filter as a starting point, not a guarantee — have someone independently check it against the actual course material first.
+
 ## Unverified Exam Logistics (via Gemini AI-mode summary, 2026-09-23)
 - Cost: $175 USD (free for eligible Anthropic partners) — differs from CCAR-F's $125
 - Validity: 12 months, renewable via reassessment
