@@ -31,6 +31,21 @@
     min-width: 220px;
   }
   .filter-note { font-size: 12px; color: #888; margin-bottom: 14px; font-style: italic; }
+  .email-prompt { font-size: 14px; color: #333; margin-bottom: 6px; line-height: 1.6; }
+  .email-prompt input[type="email"] {
+    font-size: 14px;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    min-width: 220px;
+    font-family: inherit;
+  }
+  .email-prompt input[type="email"].invalid { border-color: #d64545; background: #fff5f5; }
+  .email-status { font-size: 12px; margin-bottom: 16px; min-height: 16px; }
+  .email-status.error { color: #d64545; }
+  .email-status.ok { color: #2a8f4f; }
+  .email-results-row { margin-top: 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .email-results-row button:disabled { background: #ccc; cursor: not-allowed; }
   .domain-header {
     margin-top: 32px;
     margin-bottom: 8px;
@@ -130,6 +145,8 @@
   <h1>CCAR-P Practice Test Generator</h1>
   <div class="subtitle">Pulls a fresh, randomized question set (up to 45) each time from a 112-question bank, weighted to CCAR-P's 7 domains (Integration 19%, Solution Design 17%, Evaluation/Testing/Optimisation 16%, Governance/Safety/Risk 14%, Stakeholder Communication/Lifecycle 14%, Claude Models/Prompting/Context Engineering 13%, Developer Productivity/Operational Enablement 7%). Use the Difficulty and Question set controls below to narrow what gets pulled in. Score history saved in this browser.</div>
   <div class="caveat">Domain weights and exam format are from third-party sources (tutorialsdojo.com, claudecertificationguide.com), cross-checked against each other but not yet confirmed against Anthropic's own official CCAR-P materials.<br><br><b>Question set (refactored in this update):</b> every question is tagged <b>"Original"</b> or <b>"Generic"</b>. <b>Generic</b> (55 questions) are written to match documented domain topics in plain, industry-standard language — the safer baseline set. <b>Original</b> (57 questions) covers the same ground once grounded in the official Anthropic Academy CCAR-P Prep Course lesson docs, but has been rewritten from scratch into original, genericized scenarios — no course-specific named frameworks, product terminology, or close paraphrasing of lesson text remain. Both sets are original authorship and test the same underlying architecture/ops concepts; "Generic" just stays further from that specific course's framing. If you intend to reuse, publish, or sell any version of this quiz, use the "Original only" filter and have someone independently check it against the source material first — this project's own authoring process is not a substitute for that review.<br><br><b>Difficulty (added in this update):</b> every question is also tagged <b>Less challenging</b>, <b>Challenging</b>, or <b>Very challenging</b>, based on how much multi-step reasoning or precise recall it demands. Narrowing both filters at once can return fewer than 45 questions for a run — the bank isn't evenly split across every combination, especially for the smallest domain (Developer Productivity, 7%).</div>
+  <p class="email-prompt">In order to keep a history of your results from this test we can send an email to <input type="email" id="emailInput" placeholder="you@example.com">.</p>
+  <div class="email-status" id="emailStatus"></div>
   <div class="controls-row">
     <div class="control-group">
       <label class="control-label" for="difficultySelect">Difficulty</label>
@@ -162,6 +179,10 @@
     <div id="score"></div>
     <div id="verdict"></div>
     <div class="domain-breakdown" id="domainBreakdown"></div>
+    <div class="email-results-row">
+      <button class="secondary" id="emailResultsBtn">Email These Results</button>
+      <div class="email-status" id="emailResultsStatus"></div>
+    </div>
     <span class="reset-link" id="retakeLink">Generate another test</span>
   </div>
 
@@ -512,16 +533,106 @@ document.getElementById('submitBtn').addEventListener('click', () => {
   document.getElementById('results').classList.add('show');
   document.getElementById('results').scrollIntoView({behavior:'smooth'});
 
+  const attemptDate = new Date().toLocaleString();
   saveAttempt({
-    date: new Date().toLocaleString(),
+    date: attemptDate,
     score: score,
     total: currentTest.length,
     domainStats: domainStats
   });
   renderHistory();
+
+  lastResult = {
+    date: attemptDate,
+    score: score,
+    total: currentTest.length,
+    pct: Math.round(pct),
+    verdict: verdict,
+    domainStats: domainStats,
+    difficulty: document.getElementById('difficultySelect').value,
+    source: document.getElementById('sourceSelect').value
+  };
+  document.getElementById('emailResultsStatus').textContent = '';
+});
+
+// ---- Email results (mailto draft — this is a local, static file with no
+// backend/server, so there is no way to silently send mail on its own; this
+// opens the device's default email app with the message pre-filled, and you
+// still have to hit Send there) ----
+const EMAIL_KEY = "ccarp_practice_email";
+let lastResult = null;
+
+function isValidEmail(v) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
+
+function updateEmailStatus() {
+  const input = document.getElementById('emailInput');
+  const status = document.getElementById('emailStatus');
+  const val = input.value.trim();
+  const btn = document.getElementById('emailResultsBtn');
+  if (val === '') {
+    input.classList.remove('invalid');
+    status.textContent = '';
+    status.className = 'email-status';
+  } else if (!isValidEmail(val)) {
+    input.classList.add('invalid');
+    status.textContent = 'That doesn\'t look like a valid email address yet.';
+    status.className = 'email-status error';
+  } else {
+    input.classList.remove('invalid');
+    status.textContent = 'Saved in this browser. Results will offer to email here after you submit a test.';
+    status.className = 'email-status ok';
+    try { localStorage.setItem(EMAIL_KEY, val); } catch (e) {}
+  }
+  if (btn) btn.disabled = !isValidEmail(val);
+}
+
+function buildResultsEmailBody(r) {
+  let body = `CCAR-P Practice Test Results\n`;
+  body += `Date: ${r.date}\n`;
+  body += `Score: ${r.score} / ${r.total} (${r.pct}%)\n`;
+  body += `${r.verdict}\n\n`;
+  body += `Filters used: Difficulty = ${r.difficulty}, Question set = ${r.source}\n\n`;
+  body += `Domain breakdown:\n`;
+  Object.keys(r.domainStats).forEach(d => {
+    const s = r.domainStats[d];
+    body += `  ${d}: ${s.correct} / ${s.total}\n`;
+  });
+  return body;
+}
+
+document.getElementById('emailInput').addEventListener('input', updateEmailStatus);
+
+document.getElementById('emailResultsBtn').addEventListener('click', () => {
+  const email = document.getElementById('emailInput').value.trim();
+  const resultsStatus = document.getElementById('emailResultsStatus');
+  if (!isValidEmail(email)) {
+    resultsStatus.textContent = 'Enter a valid email address above first.';
+    resultsStatus.className = 'email-status error';
+    return;
+  }
+  if (!lastResult) {
+    resultsStatus.textContent = 'No results to send yet — submit a test first.';
+    resultsStatus.className = 'email-status error';
+    return;
+  }
+  const subject = `CCAR-P Practice Test Results — ${lastResult.score}/${lastResult.total} (${lastResult.pct}%)`;
+  const body = buildResultsEmailBody(lastResult);
+  const mailtoUrl = 'mailto:' + encodeURIComponent(email) +
+    '?subject=' + encodeURIComponent(subject) +
+    '&body=' + encodeURIComponent(body);
+  window.location.href = mailtoUrl;
+  resultsStatus.textContent = 'Opening your email app with a draft to ' + email + ' — hit Send there to deliver it.';
+  resultsStatus.className = 'email-status ok';
 });
 
 // initial load
+try {
+  const savedEmail = localStorage.getItem(EMAIL_KEY);
+  if (savedEmail) document.getElementById('emailInput').value = savedEmail;
+} catch (e) {}
+updateEmailStatus();
 renderTest();
 renderHistory();
 </script>
