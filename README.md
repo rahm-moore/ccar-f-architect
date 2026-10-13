@@ -45,6 +45,8 @@ the certificate files themselves — just pointers to them).
 
 1. Copy `templates/program-README-template.md` into a new `programs/<provider-name>/README.md`.
 2. Copy `templates/study-progress-template.md` into `programs/<provider-name>/study-progress.md`.
-3. Add a row to the **Active programs** table above.
-4. When a course/module completes and a certificate is issued, add a row to
+3. Copy `templates/notes-template.md` into `programs/<provider-name>/notes.md`.
+4. Copy `templates/resources-template.md` into `programs/<provider-name>/resources.md`.
+5. Add a row to the **Active programs** table above.
+6. When a course/module completes and a certificate is issued, add a row to
    `certificates/certificates.md` and upload the certificate to Google Drive.
