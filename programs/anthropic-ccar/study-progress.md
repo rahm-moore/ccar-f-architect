@@ -109,8 +109,8 @@ Confirmed directly from Rahm's logged-in Anthropic Academy view — free, regist
 - Official "Claude Certified Architect – Professional Certification Prep Course" (name referenced, not yet located/confirmed directly)
 - Tutorials Dojo's CCAR-P Practice Exams (third-party, multiple-choice + multiple-response, with explanations)
 
-## CCAR-P Practice Test Generator — built 2026-09-23, expanded 2026-10-02 and 2026-10-06
-`ccarp-practice-test-generator.html` in the repo (`programs/anthropic-ccar/practice-tests/`): now a 112-question bank (up from 64) across all 7 domains, weighted to documented proportions, length-balanced distractors, positions shuffled across A/B/C/D from the start. Test size increased from 30 → 40 → 45 questions per run to keep pace with the larger bank.
+## CCAR-P Practice Test Generator — built 2026-09-23, expanded 2026-10-02, 2026-10-06, 2026-10-24
+`ccarp-practice-test-generator.html` in the repo (`programs/anthropic-ccar/practice-tests/`): now a 155-question bank (up from 64) across all 7 domains, weighted to documented proportions, length-balanced distractors, positions shuffled across A/B/C/D from the start.
 
 **2026-10-02 expansion:** 30 new questions added, grounded directly in real lesson content read from the Module 2, 3, and (early) Module 4 Google Drive docs (not third-party material) — covering enterprise integration patterns, use-case sizing and feasibility, the evals framework, A/B testing and observability, guardrails, fairness, compliance, and discovery.
 
@@ -118,13 +118,19 @@ Confirmed directly from Rahm's logged-in Anthropic Academy view — free, regist
 
 **Caveat carried in the tool itself:** questions are original and written to match real course content or documented domain topics, not reproductions of any real exam or vendor content. The 7-domain weighting/format is still third-party (tutorialsdojo.com + claudecertificationguide.com) for the official exam blueprint, not yet confirmed against Anthropic's own materials — but the questions' underlying content is first-party, pulled directly from the official Anthropic Academy CCAR-P Prep Course lesson docs.
 
-**Refactor (prompted by Rahm asking whether this could be sold as an app):** the 57 questions that were closely grounded in specific named frameworks/terminology from the official course (Module 1's platform-map vocabulary, plus all of the 2026-10-02 and 2026-10-06 Module 2–5 batches) were rewritten from scratch — same underlying architecture/ops concept tested, but genericized scenarios with no course-specific named frameworks, product terminology, or close paraphrasing of lesson text. The original 55 pre-10-02 questions (already written to match documented topic lists rather than course text) were left as-is. Every question is now tagged:
-- **`source`: `"original"`** (57) — the rewritten, genericized set, or **`"generic"`** (55) — the pre-existing industry-pattern set. A dropdown in the tool filters by this.
-- **`difficulty`: `"less"`** (18), **`"challenging"`** (46), or **`"very"`** (48) — a second dropdown filters by this.
+**Refactor (prompted by Rahm asking whether this could be sold as an app):** the questions that were closely grounded in specific named frameworks/terminology from the official course (Module 1's platform-map vocabulary, plus all of the 2026-10-02 and 2026-10-06 Module 2–5 batches) were rewritten from scratch — same underlying architecture/ops concept tested, but genericized scenarios with no course-specific named frameworks, product terminology, or close paraphrasing of lesson text. The original pre-10-02 questions (already written to match documented topic lists rather than course text) were left as-is. Every question is tagged:
+- **`source`: `"original"`** (104) — the rewritten/newly-authored, genericized set, or **`"generic"`** (51) — the pre-existing industry-pattern set. A dropdown in the tool filters by this.
+- **`difficulty`: `"less"`** (18), **`"challenging"`** (55), or **`"very"`** (82) — a second dropdown filters by this.
 
-Narrowing both filters at once can return fewer than 45 questions for a run (the bank isn't evenly split across every combination) — the tool now shows a note when this happens and uses whatever's available rather than erroring.
+Narrowing both filters at once can return fewer than the requested count for a run (the bank isn't evenly split across every combination) — the tool shows a note when this happens and uses whatever's available rather than erroring.
 
 **Still a caveat for any commercial use:** this rewrite was done by Claude in one pass, not independently legal-reviewed. Before publishing, selling, or distributing any version of this quiz, treat the "Original only" filter as a starting point, not a guarantee — have someone independently check it against the actual course material first.
+
+**2026-10-24 expansion — CertMasterClass.com material + timed-attempt mode (urgent, retake scheduled for 2026-10-24):** Rahm shared a screenshot of his company's internal "Mock Exam Practice" tool (timed, configurable, with domain blueprint cards and an attempt-history table) plus 5 PDFs from what he called "the Udemy prep course." On inspection, that material is actually CertMasterClass.com's paid "Claude Certified Architect Professional" course by Jacob Bushong (companion guide, flashcards, and 3 full 30-question assessments with answer keys) — not Udemy, and not Anthropic's own material. Its stated domain weights (17/13/19/16/14/14/7%) exactly match what was already hardcoded in this tool from the tutorialsdojo.com/claudecertificationguide.com sources, which cross-confirms the blueprint rather than changing it.
+
+43 new questions were added (155 total), freshly authored from real facts/figures taught across that material — e.g., Contextual Embeddings (~35%) + Contextual BM25 (~49%) + reranking (~67%) retrieval-failure-reduction stacking, Constitutional Classifiers cutting jailbreak success from 86% to 4.4%, MCP's two-transport OAuth-vs-none authorization split, deny-rule-overrides-allow-rule permission precedence, the SLI→SLO→SLA/error-budget chain, ADR Consequences requiring both positive and negative outcomes, the drift-vs-regression diagnostic distinction, and Anthropic's own published multi-agent-vs-single-agent token-cost tradeoff research — **not** CertMasterClass's actual question text, which stays a commercial vendor's IP and was deliberately not reproduced here (same caution as the earlier "sell as an app" conversation).
+
+The tool also gained a timed-attempt mode mimicking the internal company tool's UX: clickable domain "blueprint" cards (weight % + available question count, click to include/exclude a domain), a question-count selector (10/20/30/45/63-real-exam-length/full bank), a seconds-per-question pace selector (30/60/90/120s, or no timer) with a live "~X minutes total" estimate, a countdown timer bar during the attempt that auto-submits at zero, and a richer attempt-history table (Date, Questions, Raw %, Weighted %, Result, Elapsed). "Weighted %" applies the same 7-domain weights used for test generation to the domain-by-domain results, and "Result" is Pass/Fail at ≥72% weighted — approximating the real score report's 720/1000 threshold, not an official Pearson VUE formula.
 
 ## Unverified Exam Logistics (via Gemini AI-mode summary, 2026-09-23)
 - Cost: $175 USD (free for eligible Anthropic partners) — differs from CCAR-F's $125
@@ -132,11 +138,11 @@ Narrowing both filters at once can return fewer than 45 questions for a run (the
 - **Not yet confirmed against Anthropic's own site — treat as directional only.**
 
 ## Next Steps (updated 2026-10-06)
-1. **All 5 official modules are now complete** — no remaining course content gap. Use the 112-question/45-per-run practice generator for full-coverage review across all 7 domains; a low score anywhere now reflects retention, not unstudied material.
-2. Run a full practice test (or several) this week and log scores in the generator's history to find any domain that needs a second pass before scheduling the real exam.
-3. Resolve the Bounteous/Pearson VUE nomination mismatch (flagged above) before scheduling the real exam — confirm Professional is actually sanctioned on Bounteous's side.
-4. Re-run the deadline math once nomination/scheduling is sorted — don't assume Oct 31 or the Foundations-era 30-day framing still applies to Professional.
-5. Once practice scores are consistently strong across all domains, schedule the Pearson VUE exam.
+1. **All 5 official modules are now complete** — no remaining course content gap. Use the 155-question practice generator (timed-attempt mode, configurable question count) for full-coverage review across all 7 domains; a low score anywhere now reflects retention, not unstudied material.
+2. First real attempt (Oct 17, 2026) scored 683/720 — fail, just short of 720. Retake scheduled; use the timed-attempt mode at the real exam's pace (63 questions, 90s/question ≈ the real ~120 min) to rehearse under realistic conditions before the retake.
+3. Run several timed attempts and log scores/elapsed time in the generator's history to find any domain that still needs a second pass.
+4. Resolve the Bounteous/Pearson VUE nomination mismatch (flagged above) before scheduling the next real exam — confirm Professional is actually sanctioned on Bounteous's side.
+5. Once practice scores are consistently ≥85% weighted across all domains under real-exam timing, schedule the Pearson VUE retake.
 
 ---
 
